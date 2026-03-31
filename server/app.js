@@ -1,14 +1,28 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 
 import { headerRouter } from "./middleware/headerRouter.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import companionRouter from "./routes/companion.js";
 import networkRouter from "./routes/network.js";
+import updateRouter from "./routes/update.js";
+import { UPDATE_OVERLAY_SCRIPT } from "./updateOverlay.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+let cachedIndexHtml = null;
+
+function getIndexHtml(staticPath) {
+  if (cachedIndexHtml) return cachedIndexHtml;
+
+  const raw = fs.readFileSync(path.join(staticPath, "index.html"), "utf-8");
+  const scriptTag = `<script id="lt-update-overlay">${UPDATE_OVERLAY_SCRIPT}</script>`;
+  cachedIndexHtml = raw.replace("</body>", `${scriptTag}\n</body>`);
+  return cachedIndexHtml;
+}
 
 export function createApp() {
   const app = express();
@@ -23,10 +37,12 @@ export function createApp() {
 
   app.use("/api", networkRouter);
   app.use("/api/companion", companionRouter);
+  app.use("/api/update", updateRouter);
 
-  app.use(express.static(staticPath));
+  app.use(express.static(staticPath, { index: false }));
   app.get("*", (_req, res) => {
-    res.sendFile(path.join(staticPath, "index.html"));
+    const html = getIndexHtml(staticPath);
+    res.type("html").send(html);
   });
 
   app.use(errorHandler);

@@ -17,6 +17,7 @@
     "zod": "^4.3.6"
   },
   "author": "Lower Thirds Generator",
+  "updateUrl": "https://your-server.com/manifest.json",
   "engines": {
     "node": ">=18.0.0"
   },
