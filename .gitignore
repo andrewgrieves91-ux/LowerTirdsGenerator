@@ -1,0 +1,10 @@
+node_modules/
+*.log
+.DS_Store
+state.json
+dist/mac-arm64/
+dist/*.zip
+dist/*.dmg
+dist/*.blockmap
+dist/builder-debug.yml
+.electron-cache/

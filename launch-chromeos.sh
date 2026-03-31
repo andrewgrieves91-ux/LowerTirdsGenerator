@@ -38,4 +38,4 @@ export PORT
 echo "Starting Lower Thirds Generator on http://localhost:$PORT"
 echo "Open your browser to: http://localhost:$PORT"
 echo "Press Ctrl+C to stop."
-node dist/index.js
+node server/index.js

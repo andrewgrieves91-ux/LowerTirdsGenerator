@@ -41,4 +41,4 @@ export PORT
 # ── Start the server ──────────────────────────────────────────────────────────
 echo "Starting Lower Thirds Generator on http://localhost:$PORT"
 echo "Close this window to stop the server."
-node dist/index.js
+node server/index.js
