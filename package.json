@@ -49,6 +49,18 @@
     "asar": true,
     "asarUnpack": [
       "dist/public/assets/ffmpeg/**"
-    ]
+    ],
+    "dmg": {
+      "background": "build/dmg-background.png",
+      "iconSize": 100,
+      "window": {
+        "width": 540,
+        "height": 380
+      },
+      "contents": [
+        { "x": 140, "y": 180 },
+        { "x": 400, "y": 180, "type": "link", "path": "/Applications" }
+      ]
+    }
   }
 }
