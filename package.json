@@ -8,7 +8,8 @@
     "start": "node server/index.js",
     "start:legacy": "node dist/index.js",
     "electron": "unset ELECTRON_RUN_AS_NODE && electron .",
-    "build:mac": "electron-builder --mac",
+    "build:mac": "electron-builder --mac --publish never",
+    "build:dmg": "bash build/create-dmg.sh",
     "test": "vitest run",
     "test:watch": "vitest"
   },

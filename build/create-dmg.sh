@@ -42,7 +42,10 @@ echo "==> Configuring DMG window..."
 mkdir -p "${MOUNT_DIR}/.background"
 cp "${BACKGROUND}" "${MOUNT_DIR}/.background/background.png"
 
-osascript <<APPLESCRIPT
+# Configure icon positions and background via Finder AppleScript.
+# This only works in an interactive macOS desktop session.
+set +e
+osascript <<APPLESCRIPT 2>/dev/null
 tell application "Finder"
   tell disk "${VOLUME_NAME}"
     open
@@ -64,6 +67,15 @@ tell application "Finder"
   end tell
 end tell
 APPLESCRIPT
+OSASCRIPT_EXIT=$?
+set -e
+if [ $OSASCRIPT_EXIT -eq 0 ]; then
+  echo "    Finder customization applied (background + icon positions)."
+else
+  echo "    Finder not available — skipping icon positioning (non-fatal)."
+  echo "    The DMG still has the app + Applications alias for drag-to-install."
+  echo "    Re-run this script from a desktop terminal for full styling."
+fi
 
 sync
 
