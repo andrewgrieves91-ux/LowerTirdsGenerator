@@ -1,30 +1,42 @@
 const { app, BrowserWindow, Menu } = require("electron");
 const { createServer } = require("http");
-const net = require("net");
 
 let mainWindow;
 let httpServer;
 let serverPort;
 
-function findFreePort(port = 3000) {
-  return new Promise((resolve) => {
-    const srv = net.createServer();
-    srv.listen(port, () => srv.close(() => resolve(port)));
-    srv.on("error", () => resolve(findFreePort(port + 1)));
+function listenOnFreePort(server, startPort = 3000) {
+  return new Promise((resolve, reject) => {
+    let port = startPort;
+    const maxPort = startPort + 100;
+
+    function tryPort() {
+      if (port > maxPort) {
+        reject(new Error("No free port found between " + startPort + " and " + maxPort));
+        return;
+      }
+      server.once("error", (err) => {
+        if (err.code === "EADDRINUSE") {
+          port++;
+          tryPort();
+        } else {
+          reject(err);
+        }
+      });
+      server.listen(port, "0.0.0.0", () => resolve(port));
+    }
+
+    tryPort();
   });
 }
 
 app.whenReady().then(async () => {
-  serverPort = await findFreePort(3000);
-  process.env.PORT = String(serverPort);
-
   const { createApp } = await import("../server/app.js");
   const expressApp = createApp();
   httpServer = createServer(expressApp);
 
-  await new Promise((resolve) => {
-    httpServer.listen(serverPort, "0.0.0.0", resolve);
-  });
+  serverPort = await listenOnFreePort(httpServer, 3000);
+  process.env.PORT = String(serverPort);
   console.log(`Express running on http://localhost:${serverPort}`);
 
   mainWindow = new BrowserWindow({

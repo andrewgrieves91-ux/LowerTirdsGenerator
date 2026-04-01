@@ -9,14 +9,36 @@ async function startServer() {
   const app = createApp();
   const server = createServer(app);
 
-  const port = process.env.PORT || DEFAULT_PORT;
-  server.listen(Number(port), LISTEN_HOST, () => {
-    console.log(`Server running on http://localhost:${port}/`);
-    console.log(
-      `Companion API available at http://localhost:${port}/api/companion`,
-    );
-    checkOnStartup();
+  const startPort = Number(process.env.PORT || DEFAULT_PORT);
+
+  const port = await new Promise((resolve, reject) => {
+    let current = startPort;
+
+    function tryPort() {
+      if (current > startPort + 100) {
+        reject(new Error(`No free port found (tried ${startPort}–${current})`));
+        return;
+      }
+      server.once("error", (err) => {
+        if (err.code === "EADDRINUSE") {
+          console.log(`Port ${current} in use, trying ${current + 1}…`);
+          current++;
+          tryPort();
+        } else {
+          reject(err);
+        }
+      });
+      server.listen(current, LISTEN_HOST, () => resolve(current));
+    }
+
+    tryPort();
   });
+
+  console.log(`Server running on http://localhost:${port}/`);
+  console.log(
+    `Companion API available at http://localhost:${port}/api/companion`,
+  );
+  checkOnStartup();
 }
 
 startServer().catch(console.error);
