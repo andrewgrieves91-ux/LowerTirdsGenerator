@@ -3,12 +3,12 @@ set -euo pipefail
 
 if [ -z "${1:-}" ]; then
   echo "Usage: ./build-release.sh <version> [server-url]"
-  echo "  e.g. ./build-release.sh 2.1.0 https://your-server.com"
+  echo "  e.g. ./build-release.sh 2.1.0 https://elecupdate-7jgymmnn.manus.space"
   exit 1
 fi
 
 VERSION="$1"
-SERVER_URL="${2:-https://your-server.com}"
+SERVER_URL="${2:-https://elecupdate-7jgymmnn.manus.space}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 OUT="lower-thirds-v${VERSION}.zip"
 RELEASES_DIR="${SCRIPT_DIR}/releases"
