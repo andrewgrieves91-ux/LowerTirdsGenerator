@@ -1,6 +1,6 @@
 {
   "name": "lower-thirds-generator-offline",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "Lower Thirds Generator — offline desktop app",
   "type": "module",
   "main": "electron/main.cjs",
@@ -47,10 +47,7 @@
       "!tests/**",
       "!client/**"
     ],
-    "asar": true,
-    "asarUnpack": [
-      "dist/public/assets/ffmpeg/**"
-    ],
+    "asar": false,
     "dmg": {
       "background": "build/dmg-background.png",
       "iconSize": 100,

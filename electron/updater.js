@@ -1,6 +1,8 @@
-const { app, dialog, shell, BrowserWindow, net } = require("electron");
+const { app, dialog, BrowserWindow, net } = require("electron");
 const path = require("path");
 const fs = require("fs");
+const { execFile } = require("child_process");
+const os = require("os");
 
 const GITHUB_API_URL =
   "https://api.github.com/repos/andrewgrieves91-ux/LowerTirdsGenerator/releases/latest";
@@ -63,6 +65,117 @@ function fetchLatestRelease() {
   });
 }
 
+function downloadFile(url) {
+  return new Promise((resolve, reject) => {
+    const tmpPath = path.join(os.tmpdir(), `ltg-update-${Date.now()}.zip`);
+    const fileStream = fs.createWriteStream(tmpPath);
+
+    function doRequest(reqUrl) {
+      const request = net.request({
+        url: reqUrl,
+        headers: { "User-Agent": "LowerThirdsGenerator" },
+      });
+
+      request.on("response", (response) => {
+        if (response.statusCode >= 300 && response.statusCode < 400) {
+          const location = response.headers.location;
+          const redirectUrl = Array.isArray(location) ? location[0] : location;
+          if (redirectUrl) {
+            doRequest(redirectUrl);
+            return;
+          }
+        }
+
+        if (response.statusCode !== 200) {
+          fs.unlinkSync(tmpPath);
+          reject(new Error(`Download failed: HTTP ${response.statusCode}`));
+          return;
+        }
+
+        response.on("data", (chunk) => {
+          fileStream.write(chunk);
+        });
+
+        response.on("end", () => {
+          fileStream.end(() => resolve(tmpPath));
+        });
+      });
+
+      request.on("error", (err) => {
+        fileStream.destroy();
+        try { fs.unlinkSync(tmpPath); } catch {}
+        reject(err);
+      });
+
+      request.end();
+    }
+
+    doRequest(url);
+  });
+}
+
+function extractZip(zipPath, destDir) {
+  return new Promise((resolve, reject) => {
+    fs.mkdirSync(destDir, { recursive: true });
+    execFile("unzip", ["-o", zipPath, "-d", destDir], (err, _stdout, stderr) => {
+      if (err) {
+        reject(new Error(`unzip failed: ${stderr || err.message}`));
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+function rmSync(dirPath) {
+  fs.rmSync(dirPath, { recursive: true, force: true });
+}
+
+async function applyUpdate(downloadUrl, newVersion) {
+  const appPath = app.getAppPath();
+  const tmpDir = path.join(os.tmpdir(), `ltg-update-extract-${Date.now()}`);
+
+  try {
+    console.log("[Updater] Downloading update...");
+    const zipPath = await downloadFile(downloadUrl);
+
+    console.log("[Updater] Extracting...");
+    await extractZip(zipPath, tmpDir);
+
+    const newPublic = path.join(tmpDir, "dist", "public");
+    const newServer = path.join(tmpDir, "server");
+
+    if (!fs.existsSync(newPublic) || !fs.existsSync(newServer)) {
+      throw new Error("Update ZIP is missing dist/public or server directories");
+    }
+
+    const targetPublic = path.join(appPath, "dist", "public");
+    const targetServer = path.join(appPath, "server");
+
+    console.log("[Updater] Replacing files...");
+    rmSync(targetPublic);
+    fs.cpSync(newPublic, targetPublic, { recursive: true });
+
+    rmSync(targetServer);
+    fs.cpSync(newServer, targetServer, { recursive: true });
+
+    const pkgPath = path.join(appPath, "package.json");
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+    pkg.version = newVersion;
+    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
+
+    console.log("[Updater] Cleaning up...");
+    try { fs.unlinkSync(zipPath); } catch {}
+    rmSync(tmpDir);
+
+    console.log("[Updater] Update applied successfully.");
+    return true;
+  } catch (err) {
+    rmSync(tmpDir);
+    throw err;
+  }
+}
+
 async function checkForUpdates(silent = true) {
   try {
     console.log(
@@ -81,14 +194,50 @@ async function checkForUpdates(silent = true) {
           title: "Update Available",
           message: `LTG v${latest.version} is available!`,
           detail: `You have v${CURRENT_VERSION}.\n\nRelease notes:\n${latest.notes}`,
-          buttons: ["Download Update", "Later"],
+          buttons: ["Download & Install", "Later"],
           defaultId: 0,
           cancelId: 1,
         },
       );
 
       if (result.response === 0) {
-        shell.openExternal(latest.downloadUrl);
+        const progressWin = BrowserWindow.getFocusedWindow();
+        if (progressWin) {
+          progressWin.setProgressBar(0.5);
+        }
+
+        try {
+          await applyUpdate(latest.downloadUrl, latest.version);
+
+          if (progressWin) progressWin.setProgressBar(-1);
+
+          const restart = await dialog.showMessageBox(
+            BrowserWindow.getFocusedWindow(),
+            {
+              type: "info",
+              title: "Update Installed",
+              message: `v${latest.version} has been installed!`,
+              detail: "The app needs to restart to apply the update.",
+              buttons: ["Restart Now", "Later"],
+              defaultId: 0,
+              cancelId: 1,
+            },
+          );
+
+          if (restart.response === 0) {
+            app.relaunch();
+            app.exit(0);
+          }
+        } catch (err) {
+          if (progressWin) progressWin.setProgressBar(-1);
+          console.error("[Updater] Install failed:", err.message);
+          dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
+            type: "error",
+            title: "Update Failed",
+            message: "Could not install the update.",
+            detail: err.message,
+          });
+        }
       }
     } else if (!silent) {
       dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
