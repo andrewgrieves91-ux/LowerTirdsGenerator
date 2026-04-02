@@ -77,7 +77,7 @@ export const UPDATE_OVERLAY_SCRIPT = `
       '  font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 6px;',
       '}',
       '#lt-home-logo {',
-      '  width: 80px; height: 80px; border-radius: 16px;',
+      '  max-width: 100%; height: auto; border-radius: 16px;',
       '  object-fit: contain;',
       '  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));',
       '  margin-bottom: 4px;',
@@ -86,6 +86,19 @@ export const UPDATE_OVERLAY_SCRIPT = `
       '  color: inherit; text-decoration: none; cursor: pointer;',
       '}',
       '.lt-home-link:hover { opacity: 0.8; }',
+      '.lt-tpg-logo { filter: brightness(0) invert(1); }',
+      '#lt-hub-link {',
+      '  display: inline-block; margin-top: 16px;',
+      '  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;',
+      '  font-size: 13px; font-weight: 500; color: #22d3ee;',
+      '  text-decoration: none; letter-spacing: 0.02em;',
+      '  padding: 6px 16px; border: 1px solid rgba(34,211,238,0.3);',
+      '  border-radius: 6px; background: rgba(34,211,238,0.08);',
+      '  transition: background 0.2s, border-color 0.2s;',
+      '}',
+      '#lt-hub-link:hover {',
+      '  background: rgba(34,211,238,0.18); border-color: rgba(34,211,238,0.5);',
+      '}',
     ].join('\\n');
     document.head.appendChild(style);
   }
@@ -339,6 +352,45 @@ export const UPDATE_OVERLAY_SCRIPT = `
       var subtitle = h1.nextElementSibling;
       if (subtitle && subtitle.tagName === 'P' && /graphics\\s*generator/i.test(subtitle.textContent)) {
         subtitle.remove();
+      }
+
+      requestAnimationFrame(function() {
+        var w = h1.offsetWidth;
+        if (w > 0) logo.style.width = (w / 2) + 'px';
+      });
+
+      var menuBlock = h1.closest('[data-loc*="StartPage.tsx:148"]') || h1.parentNode.parentNode;
+      if (menuBlock && !document.getElementById('lt-hub-link')) {
+        var hubLink = document.createElement('a');
+        hubLink.id = 'lt-hub-link';
+        hubLink.href = 'https://elecupdate-7jgymmnn.manus.space/';
+        hubLink.target = '_blank';
+        hubLink.rel = 'noopener';
+        hubLink.textContent = 'LTG Hub \\u2014 Updates, Feedback & Bug Reports';
+        menuBlock.appendChild(hubLink);
+      }
+    }
+
+    var logoRow = document.querySelector('[data-loc*="StartPage.tsx:130"]');
+    if (logoRow) {
+      var pageRoot = logoRow.parentNode;
+      pageRoot.appendChild(logoRow);
+      logoRow.className = logoRow.className
+        .replace(/justify-center/g, 'justify-between')
+        .replace(/gap-12/g, '');
+      logoRow.style.paddingLeft = '24px';
+      logoRow.style.paddingRight = '24px';
+
+      var fbctImg = logoRow.querySelector('[data-loc*="StartPage.tsx:137"]');
+      if (fbctImg) {
+        fbctImg.src = '/tpg-logo.png';
+        fbctImg.alt = 'The Production Group';
+        fbctImg.className = fbctImg.className
+          .replace(/bg-white/g, '')
+          .replace(/px-3/g, '')
+          .replace(/py-1/g, '')
+          .replace(/rounded/g, '');
+        fbctImg.classList.add('lt-tpg-logo');
       }
     }
   }

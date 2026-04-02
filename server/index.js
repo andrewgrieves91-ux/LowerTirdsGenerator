@@ -1,6 +1,5 @@
 import { createServer } from "http";
 import { createApp } from "./app.js";
-import { checkOnStartup } from "./updater.js";
 
 const DEFAULT_PORT = 3000;
 const LISTEN_HOST = "0.0.0.0";
@@ -38,7 +37,6 @@ async function startServer() {
   console.log(
     `Companion API available at http://localhost:${port}/api/companion`,
   );
-  checkOnStartup();
 }
 
 startServer().catch(console.error);
