@@ -268,9 +268,7 @@ export const UPDATE_OVERLAY_SCRIPT = `
     function tryInject() {
       var targets = document.querySelectorAll('[data-loc*="Settings.tsx"]');
       if (targets.length > 0 && state.update && state.update.currentVersion) {
-        if (lastVersion !== state.update.currentVersion) {
-          lastVersion = state.update.currentVersion;
-        }
+        if (document.getElementById('lt-settings-update')) return;
         var statusText = '';
         if (state.update.status === 'available') {
           statusText = 'Update available: v' + state.update.availableVersion;

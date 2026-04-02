@@ -1,0 +1,9 @@
+{
+  "version": "2.1.0",
+  "releaseDate": "2026-04-02T10:32:39Z",
+  "downloadUrl": "https://drive.google.com/uc?export=download&id=1OXlUCkCAHqAI_EvCPlmfh8-yRs1rVYWe",
+  "sha256": "ce67cf2882288c5853d6c42e54b24cf99eaef2e496cd6d8943b43fbaa5efaf1d",
+  "sizeBytes": 11660623,
+  "notes": "v2.1.0 — Home page customization (logo + version badge), clickable header navigation, stale injection cleanup, improved update checking, fixed settings update button",
+  "minNodeVersion": "18.0.0"
+}
