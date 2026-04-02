@@ -69,25 +69,16 @@ export const UPDATE_OVERLAY_SCRIPT = `
       '#lt-settings-update .lt-status-msg {',
       '  font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 6px;',
       '}',
-      '#lt-app-logo {',
-      '  width: 64px; height: 64px; border-radius: 14px;',
-      '  object-fit: contain; flex-shrink: 0;',
+      '#lt-home-logo {',
+      '  width: 80px; height: 80px; border-radius: 16px;',
+      '  object-fit: contain;',
       '  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));',
+      '  margin-bottom: 4px;',
       '}',
-      '#lt-logo-header {',
-      '  display: flex; align-items: center; gap: 14px;',
-      '  padding: 16px 0 8px 0;',
+      '.lt-home-link {',
+      '  color: inherit; text-decoration: none; cursor: pointer;',
       '}',
-      '#lt-logo-header .lt-logo-title {',
-      '  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;',
-      '  font-size: 18px; font-weight: 700; color: rgba(255,255,255,0.9);',
-      '  letter-spacing: -0.01em; line-height: 1.2;',
-      '}',
-      '#lt-logo-header .lt-logo-subtitle {',
-      '  font-family: "IBM Plex Mono", monospace;',
-      '  font-size: 11px; color: rgba(255,255,255,0.35);',
-      '  margin-top: 2px;',
-      '}',
+      '.lt-home-link:hover { opacity: 0.8; }',
     ].join('\\n');
     document.head.appendChild(style);
   }
@@ -262,7 +253,6 @@ export const UPDATE_OVERLAY_SCRIPT = `
       .then(function(d) {
         state.update = d;
         createVersionBadge(d.currentVersion || '?.?.?');
-        updateLogoVersion();
         if (d.status === 'available') {
           showBanner(d);
         }
@@ -310,54 +300,90 @@ export const UPDATE_OVERLAY_SCRIPT = `
     document.head.appendChild(link);
   }
 
-  function injectLogo() {
-    if (document.getElementById('lt-logo-header')) return;
-
-    var root = document.getElementById('root');
-    if (!root || !root.firstElementChild) return;
-
-    var appShell = root.firstElementChild;
-    var sidebar = appShell.querySelector('nav, aside, [class*="sidebar"], [class*="Sidebar"]');
-    var target = sidebar || appShell;
-
-    var header = document.createElement('div');
-    header.id = 'lt-logo-header';
-    header.innerHTML =
-      '<img id="lt-app-logo" src="/ltg-logo.png" alt="LTG" />' +
-      '<div>' +
-        '<div class="lt-logo-title">Lower Thirds<br>Generator</div>' +
-        '<div class="lt-logo-subtitle" id="lt-logo-version"></div>' +
-      '</div>';
-
-    if (target.firstChild) {
-      target.insertBefore(header, target.firstChild);
-    } else {
-      target.appendChild(header);
-    }
+  function isHomePage() {
+    var p = location.pathname;
+    return p === '/' || p === '';
   }
 
-  function updateLogoVersion() {
-    var el = document.getElementById('lt-logo-version');
-    if (el && state.update && state.update.currentVersion) {
-      el.textContent = 'v' + state.update.currentVersion;
-    }
-  }
+  function customizeHomePage() {
+    if (!isHomePage()) return;
+    if (document.getElementById('lt-home-logo')) return;
 
-  var logoObserver = null;
-  function watchForApp() {
-    if (logoObserver) return;
-    function tryLogo() {
-      var root = document.getElementById('root');
-      if (root && root.firstElementChild) {
-        injectLogo();
-        updateLogoVersion();
+    var betaEl = document.querySelector('[data-loc*="StartPage.tsx:145"]');
+    if (!betaEl) return;
+
+    var version = (state.update && state.update.currentVersion) || '';
+    betaEl.textContent = version ? 'v' + version : '';
+
+    var logo = document.createElement('img');
+    logo.id = 'lt-home-logo';
+    logo.src = '/ltg-logo.png';
+    logo.alt = 'LTG';
+    betaEl.parentNode.insertBefore(logo, betaEl);
+
+    var h1 = betaEl.parentNode.querySelector('h1');
+    if (h1) {
+      h1.textContent = 'Lower Thirds Generator';
+      var subtitle = h1.nextElementSibling;
+      if (subtitle && subtitle.tagName === 'P' && /graphics\\s*generator/i.test(subtitle.textContent)) {
+        subtitle.remove();
       }
     }
-    logoObserver = new MutationObserver(function() {
-      requestAnimationFrame(tryLogo);
+  }
+
+  function makeHeaderClickable() {
+    if (isHomePage()) return;
+    if (document.querySelector('.lt-home-link')) return;
+
+    var allH1 = document.querySelectorAll('h1');
+    for (var i = 0; i < allH1.length; i++) {
+      var h1 = allH1[i];
+      if (/LOWER\\s*THIRDS\\s*GENERATOR/i.test(h1.textContent)) {
+        var link = document.createElement('a');
+        link.href = '/';
+        link.title = 'Home Page';
+        link.className = 'lt-home-link';
+        while (h1.firstChild) {
+          link.appendChild(h1.firstChild);
+        }
+        h1.appendChild(link);
+        break;
+      }
+    }
+  }
+
+  function removeStaleInjections() {
+    if (!isHomePage()) {
+      var logo = document.getElementById('lt-home-logo');
+      if (logo) logo.remove();
+    }
+    if (isHomePage()) {
+      var link = document.querySelector('.lt-home-link');
+      if (link) {
+        var h1 = link.parentNode;
+        while (link.firstChild) { h1.appendChild(link.firstChild); }
+        link.remove();
+      }
+    }
+  }
+
+  var pageObserver = null;
+  function watchForPageChanges() {
+    if (pageObserver) return;
+
+    function applyPageUI() {
+      var root = document.getElementById('root');
+      if (!root || !root.firstElementChild) return;
+      removeStaleInjections();
+      customizeHomePage();
+      makeHeaderClickable();
+    }
+
+    pageObserver = new MutationObserver(function() {
+      requestAnimationFrame(applyPageUI);
     });
-    logoObserver.observe(document.getElementById('root') || document.body, { childList: true, subtree: true });
-    tryLogo();
+    pageObserver.observe(document.getElementById('root') || document.body, { childList: true, subtree: true });
+    applyPageUI();
   }
 
   function init() {
@@ -365,7 +391,7 @@ export const UPDATE_OVERLAY_SCRIPT = `
     setFavicon();
     checkAndRender();
     watchForSettings();
-    watchForApp();
+    watchForPageChanges();
     setInterval(checkAndRender, POLL_INTERVAL);
   }
 
