@@ -3,8 +3,14 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+VERSION="${1:-}"
+if [ -z "$VERSION" ]; then
+  VERSION=$(node -e "console.log(require('${PROJECT_DIR}/package.json').version)")
+fi
+
 APP_PATH="${PROJECT_DIR}/dist/mac-arm64/Lower Thirds Generator.app"
-DMG_NAME="Lower Thirds Generator-2.0.0-arm64"
+DMG_NAME="Lower Thirds Generator-${VERSION}-arm64"
 DMG_PATH="${PROJECT_DIR}/dist/${DMG_NAME}.dmg"
 VOLUME_NAME="Lower Thirds Generator"
 BACKGROUND="${SCRIPT_DIR}/dmg-background.png"

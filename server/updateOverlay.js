@@ -2,8 +2,18 @@ export const UPDATE_OVERLAY_SCRIPT = `
 (function() {
   'use strict';
 
-  var POLL_INTERVAL = 60 * 60 * 1000; // re-check every hour
+  var POLL_INTERVAL = 60 * 60 * 1000;
   var state = { update: null, dismissed: false };
+
+  function compareVersions(a, b) {
+    var pa = a.replace(/^v/, '').split('.').map(Number);
+    var pb = b.replace(/^v/, '').split('.').map(Number);
+    for (var i = 0; i < 3; i++) {
+      if ((pa[i] || 0) > (pb[i] || 0)) return 1;
+      if ((pa[i] || 0) < (pb[i] || 0)) return -1;
+    }
+    return 0;
+  }
 
   function createStyles() {
     var style = document.createElement('style');
@@ -20,21 +30,18 @@ export const UPDATE_OVERLAY_SCRIPT = `
       '#lt-update-banner.lt-visible { transform: translateY(0); }',
       '#lt-update-banner .lt-update-text { flex: 1; }',
       '#lt-update-banner .lt-update-notes { opacity: 0.8; margin-left: 12px; font-size: 12px; }',
-      '#lt-update-banner button {',
+      '#lt-update-banner a.lt-btn-download, #lt-update-banner button {',
       '  border: none; border-radius: 4px; padding: 6px 14px; cursor: pointer;',
-      '  font-size: 12px; font-weight: 600; margin-left: 8px;',
+      '  font-size: 12px; font-weight: 600; margin-left: 8px; text-decoration: none; display: inline-block;',
       '}',
-      '#lt-update-banner .lt-btn-apply {',
+      '#lt-update-banner .lt-btn-download {',
       '  background: #fff; color: #155e75;',
       '}',
-      '#lt-update-banner .lt-btn-apply:hover { background: #e0f2fe; }',
+      '#lt-update-banner .lt-btn-download:hover { background: #e0f2fe; }',
       '#lt-update-banner .lt-btn-dismiss {',
       '  background: rgba(255,255,255,0.15); color: #fff;',
       '}',
       '#lt-update-banner .lt-btn-dismiss:hover { background: rgba(255,255,255,0.25); }',
-      '#lt-update-banner .lt-btn-applying {',
-      '  background: rgba(255,255,255,0.2); color: #fff; cursor: wait;',
-      '}',
       '#lt-version-badge {',
       '  position: fixed; bottom: 8px; right: 12px; z-index: 99998;',
       '  font-family: "IBM Plex Mono", monospace; font-size: 11px;',
@@ -92,16 +99,15 @@ export const UPDATE_OVERLAY_SCRIPT = `
     return banner;
   }
 
-  function showBanner(data) {
+  function showBanner(version, notes, downloadUrl) {
     if (state.dismissed) return;
     var banner = createBanner();
-    var notes = data.manifest && data.manifest.notes ? data.manifest.notes : '';
     banner.innerHTML =
       '<span class="lt-update-text">' +
-        '<strong>Update available: v' + escHtml(data.availableVersion) + '</strong>' +
+        '<strong>Update available: v' + escHtml(version) + '</strong>' +
         (notes ? '<span class="lt-update-notes">' + escHtml(notes) + '</span>' : '') +
       '</span>' +
-      '<button class="lt-btn-apply" onclick="window.__ltApplyUpdate()">Download &amp; Install</button>' +
+      '<a class="lt-btn-download" href="' + escAttr(downloadUrl) + '" target="_blank" rel="noopener">Download</a>' +
       '<button class="lt-btn-dismiss" onclick="window.__ltDismissBanner()">Dismiss</button>';
     requestAnimationFrame(function() {
       banner.classList.add('lt-visible');
@@ -114,22 +120,6 @@ export const UPDATE_OVERLAY_SCRIPT = `
       banner.classList.remove('lt-visible');
       setTimeout(function() { banner.remove(); }, 300);
     }
-  }
-
-  function showApplying() {
-    var banner = createBanner();
-    banner.innerHTML =
-      '<span class="lt-update-text"><strong>Installing update\u2026</strong> Please wait.</span>' +
-      '<button class="lt-btn-applying" disabled>Installing\u2026</button>';
-    banner.classList.add('lt-visible');
-  }
-
-  function showRestart() {
-    var banner = createBanner();
-    banner.innerHTML =
-      '<span class="lt-update-text"><strong>Update installed!</strong> Please restart the application to use the new version.</span>' +
-      '<button class="lt-btn-apply" onclick="location.reload()">Reload Now</button>';
-    banner.classList.add('lt-visible');
   }
 
   function showError(msg) {
@@ -146,6 +136,10 @@ export const UPDATE_OVERLAY_SCRIPT = `
     return d.innerHTML;
   }
 
+  function escAttr(s) {
+    return (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+  }
+
   function createVersionBadge(version) {
     var badge = document.getElementById('lt-version-badge');
     if (!badge) {
@@ -154,6 +148,39 @@ export const UPDATE_OVERLAY_SCRIPT = `
       document.body.appendChild(badge);
     }
     badge.textContent = 'v' + version;
+  }
+
+  function checkForUpdate() {
+    var localVersion = window.__LT_VERSION;
+    var updateUrl = window.__LT_UPDATE_URL;
+
+    if (!localVersion || !updateUrl) return Promise.resolve(null);
+
+    return fetch(updateUrl, {
+      headers: { 'Accept': 'application/vnd.github.v3+json' }
+    })
+    .then(function(r) {
+      if (!r.ok) throw new Error('GitHub API returned ' + r.status);
+      return r.json();
+    })
+    .then(function(release) {
+      var remoteVersion = (release.tag_name || '').replace(/^v/, '');
+      var notes = release.body || '';
+      var assets = release.assets || [];
+      var asset = null;
+      for (var i = 0; i < assets.length; i++) {
+        if (assets[i].name.indexOf('.zip') !== -1) { asset = assets[i]; break; }
+      }
+      var downloadUrl = asset ? asset.browser_download_url : release.html_url;
+
+      return {
+        currentVersion: localVersion,
+        remoteVersion: remoteVersion,
+        notes: notes,
+        downloadUrl: downloadUrl,
+        hasUpdate: compareVersions(remoteVersion, localVersion) > 0
+      };
+    });
   }
 
   function injectSettingsWidget(version, statusText) {
@@ -195,32 +222,34 @@ export const UPDATE_OVERLAY_SCRIPT = `
       var btn = this;
       var statusEl = document.getElementById('lt-settings-status');
       btn.disabled = true;
-      btn.textContent = 'Checking\u2026';
+      btn.textContent = 'Checking\\u2026';
       statusEl.textContent = '';
 
-      fetch('/api/update/check')
-        .then(function(r) { return r.json(); })
+      checkForUpdate()
         .then(function(d) {
           btn.disabled = false;
           btn.textContent = 'Check for Updates';
-          if (d.status === 'available') {
-            statusEl.textContent = 'Update available: v' + d.availableVersion;
+          if (!d) {
+            statusEl.textContent = 'Update URL not configured.';
+            statusEl.style.color = '#f87171';
+            return;
+          }
+          if (d.hasUpdate) {
+            statusEl.innerHTML = 'Update available: v' + escHtml(d.remoteVersion) +
+              ' &mdash; <a href="' + escAttr(d.downloadUrl) + '" target="_blank" rel="noopener" style="color:#22d3ee">Download</a>';
             statusEl.style.color = '#22d3ee';
             state.update = d;
             state.dismissed = false;
-            showBanner(d);
-          } else if (d.status === 'up-to-date') {
+            showBanner(d.remoteVersion, d.notes, d.downloadUrl);
+          } else {
             statusEl.textContent = 'You are on the latest version.';
             statusEl.style.color = 'rgba(255,255,255,0.5)';
-          } else if (d.error) {
-            statusEl.textContent = 'Error: ' + d.error;
-            statusEl.style.color = '#f87171';
           }
         })
         .catch(function(err) {
           btn.disabled = false;
           btn.textContent = 'Check for Updates';
-          statusEl.textContent = 'Network error';
+          statusEl.textContent = 'Network error: ' + (err.message || 'unknown');
           statusEl.style.color = '#f87171';
         });
     });
@@ -231,30 +260,17 @@ export const UPDATE_OVERLAY_SCRIPT = `
     hideBanner();
   };
 
-  window.__ltApplyUpdate = function() {
-    showApplying();
-    fetch('/api/update/apply', { method: 'POST' })
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        if (d.status === 'restart-required') {
-          showRestart();
-        } else if (d.error) {
-          showError(d.error);
-        }
-      })
-      .catch(function(err) {
-        showError(err.message || 'Network error');
-      });
-  };
-
   function checkAndRender() {
-    fetch('/api/update/check')
-      .then(function(r) { return r.json(); })
+    var localVersion = window.__LT_VERSION || '?.?.?';
+    createVersionBadge(localVersion);
+
+    checkForUpdate()
       .then(function(d) {
-        state.update = d;
-        createVersionBadge(d.currentVersion || '?.?.?');
-        if (d.status === 'available') {
-          showBanner(d);
+        if (d) {
+          state.update = d;
+          if (d.hasUpdate) {
+            showBanner(d.remoteVersion, d.notes, d.downloadUrl);
+          }
         }
       })
       .catch(function() {});
@@ -263,19 +279,17 @@ export const UPDATE_OVERLAY_SCRIPT = `
   var settingsObserver = null;
   function watchForSettings() {
     if (settingsObserver) return;
-    var lastVersion = null;
 
     function tryInject() {
       var targets = document.querySelectorAll('[data-loc*="Settings.tsx"]');
-      if (targets.length > 0 && state.update && state.update.currentVersion) {
+      if (targets.length > 0) {
         if (document.getElementById('lt-settings-update')) return;
+        var version = window.__LT_VERSION || '?.?.?';
         var statusText = '';
-        if (state.update.status === 'available') {
-          statusText = 'Update available: v' + state.update.availableVersion;
-        } else if (state.update.status === 'up-to-date') {
-          statusText = 'Up to date';
+        if (state.update && state.update.hasUpdate) {
+          statusText = 'Update available: v' + state.update.remoteVersion;
         }
-        injectSettingsWidget(state.update.currentVersion, statusText);
+        injectSettingsWidget(version, statusText);
       } else {
         var existing = document.getElementById('lt-settings-update');
         if (existing) existing.remove();
@@ -310,7 +324,7 @@ export const UPDATE_OVERLAY_SCRIPT = `
     var betaEl = document.querySelector('[data-loc*="StartPage.tsx:145"]');
     if (!betaEl) return;
 
-    var version = (state.update && state.update.currentVersion) || '';
+    var version = window.__LT_VERSION || '';
     betaEl.textContent = version ? 'v' + version : '';
 
     var logo = document.createElement('img');
@@ -387,7 +401,7 @@ export const UPDATE_OVERLAY_SCRIPT = `
   function init() {
     createStyles();
     setFavicon();
-    checkAndRender();
+    setTimeout(checkAndRender, 3000);
     watchForSettings();
     watchForPageChanges();
     setInterval(checkAndRender, POLL_INTERVAL);

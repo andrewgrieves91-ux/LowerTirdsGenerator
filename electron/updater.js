@@ -1,13 +1,15 @@
 const { app, dialog, shell, BrowserWindow, net } = require("electron");
+const path = require("path");
+const fs = require("fs");
 
-const LATEST_JSON_FILE_ID = "1aRW2JdgWAL0EDd3a1hiED4J0mfHcHhsH";
-const UPDATE_CHECK_URL = `https://drive.google.com/uc?export=download&id=${LATEST_JSON_FILE_ID}`;
+const GITHUB_API_URL =
+  "https://api.github.com/repos/andrewgrieves91-ux/LowerTirdsGenerator/releases/latest";
 
 const CURRENT_VERSION = app.getVersion();
 
 function compareVersions(a, b) {
-  const partsA = a.split(".").map(Number);
-  const partsB = b.split(".").map(Number);
+  const partsA = a.replace(/^v/, "").split(".").map(Number);
+  const partsB = b.replace(/^v/, "").split(".").map(Number);
   for (let i = 0; i < 3; i++) {
     if ((partsA[i] || 0) > (partsB[i] || 0)) return 1;
     if ((partsA[i] || 0) < (partsB[i] || 0)) return -1;
@@ -15,46 +17,43 @@ function compareVersions(a, b) {
   return 0;
 }
 
-function fetchLatestInfo() {
+function fetchLatestRelease() {
   return new Promise((resolve, reject) => {
-    const request = net.request(UPDATE_CHECK_URL);
+    const request = net.request({
+      url: GITHUB_API_URL,
+      headers: {
+        "User-Agent": "LowerThirdsGenerator",
+        Accept: "application/vnd.github.v3+json",
+      },
+    });
+
     let data = "";
 
     request.on("response", (response) => {
-      if (response.statusCode >= 300 && response.statusCode < 400) {
-        const redirectUrl = response.headers.location;
-        if (redirectUrl) {
-          const target = Array.isArray(redirectUrl)
-            ? redirectUrl[0]
-            : redirectUrl;
-          const redirectRequest = net.request(target);
-          let redirectData = "";
-          redirectRequest.on("response", (res) => {
-            res.on("data", (chunk) => {
-              redirectData += chunk.toString();
-            });
-            res.on("end", () => {
-              try {
-                resolve(JSON.parse(redirectData));
-              } catch {
-                reject(new Error("Failed to parse update info"));
-              }
-            });
-          });
-          redirectRequest.on("error", reject);
-          redirectRequest.end();
-          return;
-        }
+      if (response.statusCode !== 200) {
+        reject(new Error(`GitHub API returned HTTP ${response.statusCode}`));
+        return;
       }
 
       response.on("data", (chunk) => {
         data += chunk.toString();
       });
+
       response.on("end", () => {
         try {
-          resolve(JSON.parse(data));
+          const release = JSON.parse(data);
+          const version = (release.tag_name || "").replace(/^v/, "");
+          const notes = release.body || "";
+          const asset = (release.assets || []).find((a) =>
+            a.name.endsWith(".zip"),
+          );
+          const downloadUrl = asset
+            ? asset.browser_download_url
+            : release.html_url;
+
+          resolve({ version, notes, downloadUrl });
         } catch {
-          reject(new Error("Failed to parse update info"));
+          reject(new Error("Failed to parse GitHub release info"));
         }
       });
     });
@@ -69,7 +68,7 @@ async function checkForUpdates(silent = true) {
     console.log(
       `[Updater] Checking for updates... Current version: ${CURRENT_VERSION}`,
     );
-    const latest = await fetchLatestInfo();
+    const latest = await fetchLatestRelease();
     console.log(`[Updater] Latest version: ${latest.version}`);
 
     if (compareVersions(latest.version, CURRENT_VERSION) > 0) {
@@ -81,7 +80,7 @@ async function checkForUpdates(silent = true) {
           type: "info",
           title: "Update Available",
           message: `LTG v${latest.version} is available!`,
-          detail: `You have v${CURRENT_VERSION}.\n\nRelease notes:\n${latest.releaseNotes || latest.notes || ""}`,
+          detail: `You have v${CURRENT_VERSION}.\n\nRelease notes:\n${latest.notes}`,
           buttons: ["Download Update", "Later"],
           defaultId: 0,
           cancelId: 1,

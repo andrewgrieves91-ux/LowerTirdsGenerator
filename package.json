@@ -18,7 +18,7 @@
     "zod": "^4.3.6"
   },
   "author": "Lower Thirds Generator",
-  "updateUrl": "https://drive.google.com/uc?export=download&id=1aRW2JdgWAL0EDd3a1hiED4J0mfHcHhsH",
+  "updateUrl": "https://api.github.com/repos/andrewgrieves91-ux/LowerTirdsGenerator/releases/latest",
   "engines": {
     "node": ">=18.0.0"
   },
