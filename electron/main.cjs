@@ -1,5 +1,6 @@
 const { app, BrowserWindow, Menu } = require("electron");
 const { createServer } = require("http");
+const { checkForUpdates } = require("./updater.js");
 
 let mainWindow;
 let httpServer;
@@ -56,12 +57,32 @@ app.whenReady().then(async () => {
   });
 
   const template = [
-    { role: "appMenu" },
+    {
+      role: "appMenu",
+      submenu: [
+        { role: "about" },
+        { type: "separator" },
+        {
+          label: "Check for Updates…",
+          click: () => checkForUpdates(false),
+        },
+        { type: "separator" },
+        { role: "services" },
+        { type: "separator" },
+        { role: "hide" },
+        { role: "hideOthers" },
+        { role: "unhide" },
+        { type: "separator" },
+        { role: "quit" },
+      ],
+    },
     { role: "editMenu" },
     { role: "viewMenu" },
     { role: "windowMenu" },
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+
+  setTimeout(() => checkForUpdates(true), 3000);
 });
 
 app.on("before-quit", () => {

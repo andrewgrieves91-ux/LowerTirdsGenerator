@@ -2,13 +2,12 @@
 set -euo pipefail
 
 if [ -z "${1:-}" ]; then
-  echo "Usage: ./build-release.sh <version> [server-url]"
-  echo "  e.g. ./build-release.sh 2.1.0 https://elecupdate-7jgymmnn.manus.space"
+  echo "Usage: ./build-release.sh <version>"
+  echo "  e.g. ./build-release.sh 2.1.0"
   exit 1
 fi
 
 VERSION="$1"
-SERVER_URL="${2:-https://elecupdate-7jgymmnn.manus.space}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 OUT="lower-thirds-v${VERSION}.zip"
 RELEASES_DIR="${SCRIPT_DIR}/releases"
@@ -63,13 +62,13 @@ else
   SIZE=$(stat -c%s "${RELEASES_DIR}/${OUT}")
 fi
 
-# Write manifest.json
+# Write latest.json (to be uploaded to Google Drive)
 RELEASE_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-cat > "${RELEASES_DIR}/manifest.json" <<EOF
+cat > "${RELEASES_DIR}/latest.json" <<EOF
 {
   "version": "${VERSION}",
   "releaseDate": "${RELEASE_DATE}",
-  "downloadUrl": "${SERVER_URL}/releases/${OUT}",
+  "downloadUrl": "https://drive.google.com/uc?export=download&id=REPLACE_WITH_ZIP_FILE_ID",
   "sha256": "${SHA}",
   "sizeBytes": ${SIZE},
   "notes": "Release v${VERSION}",
@@ -83,10 +82,23 @@ rm -rf "${STAGING_DIR}"
 echo ""
 echo "==> Release built successfully!"
 echo "    ZIP:      releases/${OUT}"
-echo "    Manifest: releases/manifest.json"
+echo "    Manifest: releases/latest.json"
 echo "    SHA256:   ${SHA}"
 echo "    Size:     ${SIZE} bytes"
 echo ""
-echo "Upload both files to ${SERVER_URL}:"
-echo "  - ${SERVER_URL}/manifest.json"
-echo "  - ${SERVER_URL}/releases/${OUT}"
+echo "==> Google Drive upload steps:"
+echo ""
+echo "  1. Upload releases/${OUT} to Google Drive"
+echo "     - Right-click → Share → 'Anyone with the link' → Copy link"
+echo "     - Extract the file ID from the link (the part after /d/ and before /view)"
+echo ""
+echo "  2. Edit releases/latest.json"
+echo "     - Replace REPLACE_WITH_ZIP_FILE_ID with the actual file ID from step 1"
+echo "     - Update the 'notes' field with your release notes"
+echo ""
+echo "  3. Upload/replace latest.json on Google Drive"
+echo "     - Keep the SAME file (replace contents) so the file ID stays the same"
+echo "     - Make sure sharing is set to 'Anyone with the link'"
+echo ""
+echo "  4. Update package.json 'updateUrl' with the latest.json file ID (first time only)"
+echo "     - Format: https://drive.google.com/uc?export=download&id=YOUR_LATEST_JSON_FILE_ID"

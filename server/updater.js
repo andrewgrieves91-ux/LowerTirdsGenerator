@@ -41,6 +41,44 @@ function compareVersions(a, b) {
   return 0;
 }
 
+async function fetchGoogleDrive(url, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    let res = await fetch(url, {
+      signal: controller.signal,
+      redirect: "follow",
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("text/html")) {
+      const html = await res.text();
+      const confirmMatch = html.match(
+        /href="(\/uc\?export=download[^"]+)"/,
+      );
+      if (confirmMatch) {
+        const confirmUrl = `https://drive.google.com${confirmMatch[1].replace(/&amp;/g, "&")}`;
+        res = await fetch(confirmUrl, {
+          signal: controller.signal,
+          redirect: "follow",
+        });
+        if (!res.ok) {
+          throw new Error(`Confirm download failed: HTTP ${res.status}`);
+        }
+      }
+    }
+
+    return res;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function checkForUpdate() {
   try {
     const { version, updateUrl } = await readLocalVersion();
@@ -52,22 +90,7 @@ export async function checkForUpdate() {
       return updateState;
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-
-    let res;
-    try {
-      res = await fetch(updateUrl, { signal: controller.signal });
-    } finally {
-      clearTimeout(timeout);
-    }
-
-    if (!res.ok) {
-      updateState.status = "error";
-      updateState.error = `Failed to fetch manifest: HTTP ${res.status}`;
-      return updateState;
-    }
-
+    const res = await fetchGoogleDrive(updateUrl);
     const manifest = await res.json();
     updateState.manifest = manifest;
 
@@ -98,19 +121,7 @@ async function computeSha256(filePath) {
 }
 
 async function downloadFile(url, destPath, expectedSize) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 300000);
-
-  let res;
-  try {
-    res = await fetch(url, { signal: controller.signal });
-  } finally {
-    clearTimeout(timeout);
-  }
-
-  if (!res.ok) {
-    throw new Error(`Download failed: HTTP ${res.status}`);
-  }
+  const res = await fetchGoogleDrive(url, 300000);
 
   const fileStream = createWriteStream(destPath);
   await pipeline(res.body, fileStream);
