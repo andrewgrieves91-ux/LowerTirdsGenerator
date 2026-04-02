@@ -87,6 +87,12 @@ export const UPDATE_OVERLAY_SCRIPT = `
       '}',
       '.lt-home-link:hover { opacity: 0.8; }',
       '.lt-tpg-logo { filter: brightness(0) invert(1); }',
+      '.lt-home-fit {',
+      '  height: 100vh !important; min-height: 0 !important;',
+      '  overflow: hidden !important;',
+      '}',
+      '.lt-home-fit > * { flex-shrink: 0 !important; }',
+      '#lt-home-logo { flex-shrink: 1 !important; }',
       '#lt-hub-link {',
       '  display: inline-block; margin-top: 16px;',
       '  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;',
@@ -354,6 +360,7 @@ export const UPDATE_OVERLAY_SCRIPT = `
         subtitle.remove();
       }
 
+      logo.style.maxWidth = '50%';
       requestAnimationFrame(function() {
         var w = h1.offsetWidth;
         if (w > 0) logo.style.width = (w / 2) + 'px';
@@ -392,7 +399,69 @@ export const UPDATE_OVERLAY_SCRIPT = `
           .replace(/rounded/g, '');
         fbctImg.classList.add('lt-tpg-logo');
       }
+
+      pageRoot.className = pageRoot.className
+        .replace(/justify-between/g, 'justify-center')
+        .replace(/py-10/g, 'py-4');
+      pageRoot.style.gap = '12px';
+      pageRoot.classList.add('lt-home-fit');
+      fitHomePage(pageRoot);
     }
+  }
+
+  function fitHomePage(container) {
+    if (!container) return;
+    var logo = document.getElementById('lt-home-logo');
+    var logoRow = container.querySelector('[data-loc*="StartPage.tsx:130"]');
+    var logoNaturalH = 0;
+
+    function childrenHeight() {
+      var total = 0;
+      var gap = 12;
+      var kids = container.children;
+      var visible = 0;
+      for (var i = 0; i < kids.length; i++) {
+        if (kids[i].style.display === 'none' || kids[i].offsetHeight === 0) continue;
+        total += kids[i].offsetHeight;
+        visible++;
+      }
+      total += Math.max(0, visible - 1) * gap;
+      var cs = getComputedStyle(container);
+      total += parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+      return total;
+    }
+
+    function overflows() {
+      return childrenHeight() > container.clientHeight;
+    }
+
+    function fit() {
+      if (logo) { logo.style.display = ''; logo.style.height = ''; }
+      if (logoRow) logoRow.style.display = '';
+
+      if (!overflows()) return;
+
+      if (logo) {
+        var curH = logoNaturalH || logo.offsetHeight;
+        while (curH > 10 && overflows()) {
+          curH -= 4;
+          logo.style.height = curH + 'px';
+        }
+        if (overflows()) {
+          logo.style.display = 'none';
+        }
+      }
+
+      if (overflows() && logoRow) {
+        logoRow.style.display = 'none';
+      }
+    }
+
+    setTimeout(function() {
+      if (logo) logoNaturalH = logo.offsetHeight;
+      fit();
+    }, 150);
+    window.addEventListener('resize', fit);
   }
 
   function makeHeaderClickable() {
