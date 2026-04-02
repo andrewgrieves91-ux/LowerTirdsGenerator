@@ -8,3 +8,6 @@ dist/*.dmg
 dist/*.blockmap
 dist/builder-debug.yml
 .electron-cache/
+.dmg-staging/
+releases/*.zip
+releases/*.dmg
