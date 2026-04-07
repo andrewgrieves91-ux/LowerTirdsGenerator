@@ -156,7 +156,7 @@ function createMetaOffscreenForExport(
   resScale: number,
   logoImage: HTMLImageElement | null
 ): MetaOffscreen {
-  const RENDER_SCALE = 2.0;
+  const RENDER_SCALE = 4.0;
   const config = cue.config;
   const baseNameFontSize    = config.fontSize * resScale;
   const baseEyebrowFontSize = baseNameFontSize * ((config.eyebrowFontSizePercent ?? 40) / 100);

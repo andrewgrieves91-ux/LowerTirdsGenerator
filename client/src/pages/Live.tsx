@@ -140,7 +140,7 @@ export default function Live() {
   // Create pre-rendered offscreen canvases for Meta animation
   // Called whenever the cue changes — renders text at MAX scale (1.121x) once
   const createMetaOffscreenCanvases = (cue: Cue, logoImg: HTMLImageElement | null) => {
-    const RENDER_SCALE = 2.0;
+    const RENDER_SCALE = 4.0;
     const baseNameFontSize = cue.config.fontSize;
     const baseEyebrowFontSize = cue.config.fontSize * ((cue.config.eyebrowFontSizePercent || 40) / 100);
     const baseTitleFontSize = cue.config.fontSize * ((cue.config.titleFontSizePercent || 75) / 100);
@@ -955,23 +955,24 @@ export default function Live() {
           const dstTitleY   = dstNameY + dstNameH + titleGapPx;
           const dstEyebrowY = dstNameY - dstEyebrowH - eyebrowGapPx;
 
-          // ── TEXT PASS (on top of shadow) ────────────────────────────────────────────────
+          // ── TEXT PASS — ctx.scale() transform for smooth sub-pixel scaling ──
+          // drawImage copies at 1:1; GPU transform handles the scale change each frame.
+          const drawScaled = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, region: {x:number,y:number,w:number,h:number}, dx: number, dy: number, alpha: number) => {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.translate(dx, dy);
+            ctx.scale(s, s);
+            ctx.drawImage(canvas, region.x, region.y, region.w, region.h, 0, 0, region.w, region.h);
+            ctx.restore();
+          };
           if (off.eyebrowContentW > 0) {
-            colorCtx.globalAlpha = eyebrowValues.opacity;
-            alphaCtx.globalAlpha = eyebrowValues.opacity;
-            colorCtx.drawImage(off.colorCanvas, off.eyebrow.x, off.eyebrow.y, off.eyebrow.w, off.eyebrow.h, dstX - pad * s, dstEyebrowY - pad * s, dstEyebrowW + fullPad * 2 * s, dstEyebrowH + fullPad * 2 * s);
-            alphaCtx.drawImage(off.alphaCanvas,  off.eyebrow.x, off.eyebrow.y, off.eyebrow.w, off.eyebrow.h, dstX - pad * s, dstEyebrowY - pad * s, dstEyebrowW + fullPad * 2 * s, dstEyebrowH + fullPad * 2 * s);
+            drawScaled(colorCtx, off.colorCanvas, off.eyebrow, dstX - pad * s, dstEyebrowY - pad * s, eyebrowValues.opacity);
+            drawScaled(alphaCtx, off.alphaCanvas, off.eyebrow, dstX - pad * s, dstEyebrowY - pad * s, eyebrowValues.opacity);
           }
-          // Name
-          colorCtx.globalAlpha = nameValues.opacity;
-          alphaCtx.globalAlpha = nameValues.opacity;
-          colorCtx.drawImage(off.colorCanvas, off.name.x, off.name.y, off.name.w, off.name.h, dstX - pad * s, dstNameY - pad * s, dstNameW + fullPad * 2 * s, dstNameH + fullPad * 2 * s);
-          alphaCtx.drawImage(off.alphaCanvas,  off.name.x, off.name.y, off.name.w, off.name.h, dstX - pad * s, dstNameY - pad * s, dstNameW + fullPad * 2 * s, dstNameH + fullPad * 2 * s);
-          // Title
-          colorCtx.globalAlpha = titleValues.opacity;
-          alphaCtx.globalAlpha = titleValues.opacity;
-          colorCtx.drawImage(off.colorCanvas, off.title.x, off.title.y, off.title.w, off.title.h, dstX - pad * s, dstTitleY - pad * s, dstTitleW + fullPad * 2 * s, dstTitleH + fullPad * 2 * s);
-          alphaCtx.drawImage(off.alphaCanvas,  off.title.x, off.title.y, off.title.w, off.title.h, dstX - pad * s, dstTitleY - pad * s, dstTitleW + fullPad * 2 * s, dstTitleH + fullPad * 2 * s);
+          drawScaled(colorCtx, off.colorCanvas, off.name, dstX - pad * s, dstNameY - pad * s, nameValues.opacity);
+          drawScaled(alphaCtx, off.alphaCanvas, off.name, dstX - pad * s, dstNameY - pad * s, nameValues.opacity);
+          drawScaled(colorCtx, off.colorCanvas, off.title, dstX - pad * s, dstTitleY - pad * s, titleValues.opacity);
+          drawScaled(alphaCtx, off.alphaCanvas, off.title, dstX - pad * s, dstTitleY - pad * s, titleValues.opacity);
 
 
           // ── SHADOW PASS (after text, source-over so it's visible over the background) ──────────────────────────────────────────────────────────────────────────────────────
@@ -993,14 +994,10 @@ export default function Live() {
             tmpC.width = W; tmpC.height = H;
             const tmpCtx = tmpC.getContext('2d')!;
             if (off.eyebrowContentW > 0) {
-              tmpCtx.globalAlpha = eyebrowValues.opacity;
-              tmpCtx.drawImage(off.alphaCanvas, off.eyebrow.x, off.eyebrow.y, off.eyebrow.w, off.eyebrow.h, dstX - pad * s, dstEyebrowY - pad * s, dstEyebrowW + fullPad * 2 * s, dstEyebrowH + fullPad * 2 * s);
+              drawScaled(tmpCtx, off.alphaCanvas, off.eyebrow, dstX - pad * s, dstEyebrowY - pad * s, eyebrowValues.opacity);
             }
-            tmpCtx.globalAlpha = nameValues.opacity;
-            tmpCtx.drawImage(off.alphaCanvas, off.name.x, off.name.y, off.name.w, off.name.h, dstX - pad * s, dstNameY - pad * s, dstNameW + fullPad * 2 * s, dstNameH + fullPad * 2 * s);
-            tmpCtx.globalAlpha = titleValues.opacity;
-            tmpCtx.drawImage(off.alphaCanvas, off.title.x, off.title.y, off.title.w, off.title.h, dstX - pad * s, dstTitleY - pad * s, dstTitleW + fullPad * 2 * s, dstTitleH + fullPad * 2 * s);
-            tmpCtx.globalAlpha = 1;
+            drawScaled(tmpCtx, off.alphaCanvas, off.name, dstX - pad * s, dstNameY - pad * s, nameValues.opacity);
+            drawScaled(tmpCtx, off.alphaCanvas, off.title, dstX - pad * s, dstTitleY - pad * s, titleValues.opacity);
             // Step 2: shadow canvas
             const shadowC = document.createElement('canvas');
             shadowC.width = W; shadowC.height = H;
@@ -1023,17 +1020,11 @@ export default function Live() {
             }
             colorCtx.restore();
             // Redraw text on top of shadow
-            colorCtx.save();
             if (off.eyebrowContentW > 0) {
-              colorCtx.globalAlpha = eyebrowValues.opacity;
-              colorCtx.drawImage(off.colorCanvas, off.eyebrow.x, off.eyebrow.y, off.eyebrow.w, off.eyebrow.h, dstX - pad * s, dstEyebrowY - pad * s, dstEyebrowW + fullPad * 2 * s, dstEyebrowH + fullPad * 2 * s);
+              drawScaled(colorCtx, off.colorCanvas, off.eyebrow, dstX - pad * s, dstEyebrowY - pad * s, eyebrowValues.opacity);
             }
-            colorCtx.globalAlpha = nameValues.opacity;
-            colorCtx.drawImage(off.colorCanvas, off.name.x, off.name.y, off.name.w, off.name.h, dstX - pad * s, dstNameY - pad * s, dstNameW + fullPad * 2 * s, dstNameH + fullPad * 2 * s);
-            colorCtx.globalAlpha = titleValues.opacity;
-            colorCtx.drawImage(off.colorCanvas, off.title.x, off.title.y, off.title.w, off.title.h, dstX - pad * s, dstTitleY - pad * s, dstTitleW + fullPad * 2 * s, dstTitleH + fullPad * 2 * s);
-            colorCtx.globalAlpha = 1;
-            colorCtx.restore();
+            drawScaled(colorCtx, off.colorCanvas, off.name, dstX - pad * s, dstNameY - pad * s, nameValues.opacity);
+            drawScaled(colorCtx, off.colorCanvas, off.title, dstX - pad * s, dstTitleY - pad * s, titleValues.opacity);
           }
 
           // Reset alpha and skip the rest of the text rendering block
