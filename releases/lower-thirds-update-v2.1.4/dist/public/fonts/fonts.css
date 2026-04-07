@@ -1,0 +1,8 @@
+/* Optimistic Display - bundled locally */
+@font-face {
+  font-family: 'Optimistic Display';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url(/OptimisticDisplay_Medium.4ea00554.ttf) format('truetype');
+}

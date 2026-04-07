@@ -206,21 +206,18 @@ export const UPDATE_OVERLAY_SCRIPT = `
     var existing = document.getElementById('lt-settings-update');
     if (existing) existing.remove();
 
-    var targets = document.querySelectorAll('[data-loc*="Settings.tsx"]');
-    if (targets.length === 0) return;
-
-    var settingsContainer = null;
-    for (var i = 0; i < targets.length; i++) {
-      var el = targets[i];
-      if (el.tagName === 'DIV' && el.children.length > 2) {
-        settingsContainer = el;
-        break;
+    var generalTab = document.querySelector('[data-loc*="Settings.tsx:551"]');
+    if (!generalTab) {
+      var targets = document.querySelectorAll('[data-loc*="Settings.tsx"]');
+      if (targets.length === 0) return;
+      for (var i = 0; i < targets.length; i++) {
+        if (targets[i].className && targets[i].className.indexOf('space-y') !== -1) {
+          generalTab = targets[i];
+          break;
+        }
       }
     }
-    if (!settingsContainer) {
-      settingsContainer = targets[0].closest('div[class*="space-y"]') || targets[0].parentElement;
-    }
-    if (!settingsContainer) return;
+    if (!generalTab) return;
 
     var widget = document.createElement('div');
     widget.id = 'lt-settings-update';
@@ -235,7 +232,7 @@ export const UPDATE_OVERLAY_SCRIPT = `
         '<span class="lt-status-msg" id="lt-settings-status">' + (statusText || '') + '</span>' +
       '</div>';
 
-    settingsContainer.insertBefore(widget, settingsContainer.firstChild);
+    generalTab.insertBefore(widget, generalTab.firstChild);
 
     document.getElementById('lt-check-btn').addEventListener('click', function() {
       var btn = this;
