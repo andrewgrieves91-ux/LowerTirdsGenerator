@@ -30,14 +30,14 @@ export const UPDATE_OVERLAY_SCRIPT = `
       '#lt-update-banner.lt-visible { transform: translateY(0); }',
       '#lt-update-banner .lt-update-text { flex: 1; }',
       '#lt-update-banner .lt-update-notes { opacity: 0.8; margin-left: 12px; font-size: 12px; }',
-      '#lt-update-banner a.lt-btn-download, #lt-update-banner button {',
+      '#lt-update-banner button {',
       '  border: none; border-radius: 4px; padding: 6px 14px; cursor: pointer;',
       '  font-size: 12px; font-weight: 600; margin-left: 8px; text-decoration: none; display: inline-block;',
       '}',
-      '#lt-update-banner .lt-btn-download {',
+      '#lt-update-banner .lt-btn-install {',
       '  background: #fff; color: #155e75;',
       '}',
-      '#lt-update-banner .lt-btn-download:hover { background: #e0f2fe; }',
+      '#lt-update-banner .lt-btn-install:hover { background: #e0f2fe; }',
       '#lt-update-banner .lt-btn-dismiss {',
       '  background: rgba(255,255,255,0.15); color: #fff;',
       '}',
@@ -118,16 +118,28 @@ export const UPDATE_OVERLAY_SCRIPT = `
     return banner;
   }
 
+  function triggerUpdateAction(downloadUrl) {
+    if (window.ltElectron && window.ltElectron.triggerUpdate) {
+      window.ltElectron.triggerUpdate();
+    } else {
+      window.open(downloadUrl, '_blank');
+    }
+  }
+
   function showBanner(version, notes, downloadUrl) {
     if (state.dismissed) return;
     var banner = createBanner();
+    var btnLabel = (window.ltElectron) ? 'Download \\u0026 Install' : 'Download';
     banner.innerHTML =
       '<span class="lt-update-text">' +
         '<strong>Update available: v' + escHtml(version) + '</strong>' +
         (notes ? '<span class="lt-update-notes">' + escHtml(notes) + '</span>' : '') +
       '</span>' +
-      '<a class="lt-btn-download" href="' + escAttr(downloadUrl) + '" target="_blank" rel="noopener">Download</a>' +
+      '<button class="lt-btn-install" id="lt-banner-install">' + btnLabel + '</button>' +
       '<button class="lt-btn-dismiss" onclick="window.__ltDismissBanner()">Dismiss</button>';
+    document.getElementById('lt-banner-install').addEventListener('click', function() {
+      triggerUpdateAction(downloadUrl);
+    });
     requestAnimationFrame(function() {
       banner.classList.add('lt-visible');
     });
@@ -251,9 +263,13 @@ export const UPDATE_OVERLAY_SCRIPT = `
             return;
           }
           if (d.hasUpdate) {
+            var actionLabel = (window.ltElectron) ? 'Download \\u0026 Install' : 'Download';
             statusEl.innerHTML = 'Update available: v' + escHtml(d.remoteVersion) +
-              ' &mdash; <a href="' + escAttr(d.downloadUrl) + '" target="_blank" rel="noopener" style="color:#22d3ee">Download</a>';
+              ' &mdash; <button style="color:#22d3ee;background:none;border:none;cursor:pointer;font-size:inherit;padding:0;text-decoration:underline" id="lt-settings-install">' + actionLabel + '</button>';
             statusEl.style.color = '#22d3ee';
+            document.getElementById('lt-settings-install').addEventListener('click', function() {
+              triggerUpdateAction(d.downloadUrl);
+            });
             state.update = d;
             state.dismissed = false;
             showBanner(d.remoteVersion, d.notes, d.downloadUrl);

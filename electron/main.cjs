@@ -1,5 +1,6 @@
-const { app, BrowserWindow, Menu } = require("electron");
+const { app, BrowserWindow, Menu, ipcMain } = require("electron");
 const { createServer } = require("http");
+const path = require("path");
 const { checkForUpdates } = require("./updater.js");
 
 let mainWindow;
@@ -47,6 +48,7 @@ app.whenReady().then(async () => {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      preload: path.join(__dirname, "preload.cjs"),
     },
   });
 
@@ -81,6 +83,8 @@ app.whenReady().then(async () => {
     { role: "windowMenu" },
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+
+  ipcMain.on("trigger-update", () => checkForUpdates(false));
 
   setTimeout(() => checkForUpdates(true), 3000);
 });
