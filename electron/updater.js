@@ -211,23 +211,8 @@ async function checkForUpdates(silent = true) {
 
           if (progressWin) progressWin.setProgressBar(-1);
 
-          const restart = await dialog.showMessageBox(
-            BrowserWindow.getFocusedWindow(),
-            {
-              type: "info",
-              title: "Update Installed",
-              message: `v${latest.version} has been installed!`,
-              detail: "The app needs to restart to apply the update.",
-              buttons: ["Restart Now", "Later"],
-              defaultId: 0,
-              cancelId: 1,
-            },
-          );
-
-          if (restart.response === 0) {
-            app.relaunch();
-            app.exit(0);
-          }
+          app.relaunch();
+          app.exit(0);
         } catch (err) {
           if (progressWin) progressWin.setProgressBar(-1);
           console.error("[Updater] Install failed:", err.message);
