@@ -387,6 +387,12 @@ export const UPDATE_OVERLAY_SCRIPT = `
         hubLink.target = '_blank';
         hubLink.rel = 'noopener';
         hubLink.textContent = 'LTG Hub \\u2014 Updates, Feedback & Bug Reports';
+        hubLink.addEventListener('click', function(e) {
+          if (window.ltElectron && window.ltElectron.openExternal) {
+            e.preventDefault();
+            window.ltElectron.openExternal('https://elecupdate-7jgymmnn.manus.space/');
+          }
+        });
         menuBlock.appendChild(hubLink);
       }
     }

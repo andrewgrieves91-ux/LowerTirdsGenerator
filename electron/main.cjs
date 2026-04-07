@@ -89,6 +89,11 @@ app.whenReady().then(async () => {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 
   ipcMain.on("trigger-update", () => checkForUpdates(false));
+  ipcMain.on("open-external", (_e, url) => {
+    if (typeof url === "string" && url.startsWith("http")) {
+      shell.openExternal(url);
+    }
+  });
 
   setTimeout(() => checkForUpdates(true), 3000);
 });
