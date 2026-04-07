@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain } = require("electron");
+const { app, BrowserWindow, Menu, ipcMain, shell } = require("electron");
 const { createServer } = require("http");
 const path = require("path");
 const { checkForUpdates } = require("./updater.js");
@@ -54,8 +54,12 @@ app.whenReady().then(async () => {
 
   mainWindow.loadURL(`http://localhost:${serverPort}`);
 
-  mainWindow.webContents.setWindowOpenHandler(() => {
-    return { action: "allow" };
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith("http://localhost") || url.startsWith("file://")) {
+      return { action: "allow" };
+    }
+    shell.openExternal(url);
+    return { action: "deny" };
   });
 
   const template = [
