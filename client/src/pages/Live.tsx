@@ -870,7 +870,7 @@ export default function Live() {
         const eyebrowGap = (currentCue.config as any).eyebrowGap ?? 8;
         const titleGap = (currentCue.config as any).titleGap ?? 10;
         // Y positions: always textBaseline='top', always base font sizes.
-        const baseEyebrowY = eyebrow ? currentCue.config.posY - baseEyebrowFontSize - eyebrowGap : 0;
+        const baseEyebrowY = (eyebrow || logoImageRef.current) ? currentCue.config.posY - baseEyebrowFontSize - eyebrowGap : 0;
         const baseNameY = currentCue.config.posY;
         const baseTitleY = currentCue.config.posY + baseNameFontSize + titleGap;
         const eyebrowY = Math.round(baseEyebrowY);

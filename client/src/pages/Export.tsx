@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { fetchFile } from "@ffmpeg/util";
+
 import gsap from "gsap";
 import { GSAPAnimationController, type AnimationValues } from "@/utils/gsapAnimationController";
 import { CheckCircle, Loader2, Clock, AlertCircle, Pencil } from "lucide-react";
@@ -147,6 +147,13 @@ interface MetaOffscreen {
   name:    { x: number; y: number; w: number; h: number };
   title:   { x: number; y: number; w: number; h: number };
   maxScale: number;
+  drawPad: number;
+  nameContentW: number;
+  nameContentH: number;
+  titleContentW: number;
+  titleContentH: number;
+  eyebrowContentW: number;
+  eyebrowContentH: number;
 }
 
 // Create offscreen canvases for Meta animation — called once per export, before the frame loop.
@@ -311,6 +318,13 @@ function createMetaOffscreenForExport(
     name: nameRegion,
     title: titleRegion,
     maxScale: RENDER_SCALE,
+    drawPad: REGION_PAD,
+    nameContentW: nameW,
+    nameContentH: nameH,
+    titleContentW: titleW,
+    titleContentH: titleH,
+    eyebrowContentW: eyebrowTotalW,
+    eyebrowContentH: eyebrowH,
   };
 }
 
@@ -433,12 +447,12 @@ function drawFrameToCanvas(
   const titleFontString   = `${fontStyle} ${effectiveTitleFontWeight} ${scaledTitleFontSize}px "${config.font}", sans-serif`;
 
   // Y positions: always textBaseline='top', always base font sizes.
-  const baseEyebrowY = eyebrow ? posY - baseEyebrowFontSize - eyebrowGap : 0;
+  const baseEyebrowY = (eyebrow || logoImage) ? posY - baseEyebrowFontSize - eyebrowGap : 0;
   const baseNameY    = posY;
   const baseTitleY   = posY + baseNameFontSize + titleGap;
-  const eyebrowYPos = Math.round(baseEyebrowY);
-  const nameYPos    = Math.round(baseNameY);
-  const titleYPos   = Math.round(baseTitleY);
+  const eyebrowYPos = Math.round(baseEyebrowY + (isMetaAnim ? 0 : eyebrowValues.y * resScale));
+  const nameYPos    = Math.round(baseNameY    + (isMetaAnim ? 0 : nameValues.y    * resScale));
+  const titleYPos   = Math.round(baseTitleY   + (isMetaAnim ? 0 : titleValues.y   * resScale));
 
   // Canvas quality settings
   ctx.imageSmoothingEnabled = true;
@@ -507,35 +521,43 @@ function drawFrameToCanvas(
     ctx.globalAlpha = 1;
     ctx.restore();
 
-    // ── META SHADOW PASS ────────────────────────────────────────────────────────
-    // Draw glyphs onto a fresh transparent canvas, cast shadow, composite before text.
+    // ── META SHADOW PASS (matching Live page) ──────────────────────────────────
     if (config.shadowEnabled) {
       const W = width;
       const H = height;
       applyShadow(
         ctx, W, H,
         (config.shadowBlur ?? 10) * resScale,
-        (config.shadowOffsetX ?? 3) * resScale,
-        (config.shadowOffsetY ?? 3) * resScale,
-        config.shadowColor ?? '#000000',
+        (config.shadowOffsetX ?? 0) * resScale,
+        (config.shadowOffsetY ?? 0) * resScale,
+        config.shadowColor ?? 'rgba(0,0,0,0.8)',
         config.shadowStrength ?? 100,
         bgColor,
         (gCtx) => {
-          // Draw each meta line onto the glyph canvas at full opacity
           gCtx.textBaseline = 'top';
           gCtx.imageSmoothingEnabled = true;
           gCtx.imageSmoothingQuality = 'high';
           if (off.eyebrow.w > 0) {
             gCtx.globalAlpha = eyebrowValues.opacity;
-            gCtx.drawImage(off.colorCanvas, off.eyebrow.x, off.eyebrow.y, off.eyebrow.w, off.eyebrow.h, dstX, dstEyebrowY, dstEyebrowW, dstEyebrowH);
+            gCtx.drawImage(off.alphaCanvas, off.eyebrow.x, off.eyebrow.y, off.eyebrow.w, off.eyebrow.h, dstX, dstEyebrowY, dstEyebrowW, dstEyebrowH);
           }
           gCtx.globalAlpha = nameValues.opacity;
-          gCtx.drawImage(off.colorCanvas, off.name.x, off.name.y, off.name.w, off.name.h, dstX, dstNameY, dstNameW, dstNameH);
+          gCtx.drawImage(off.alphaCanvas, off.name.x, off.name.y, off.name.w, off.name.h, dstX, dstNameY, dstNameW, dstNameH);
           gCtx.globalAlpha = titleValues.opacity;
-          gCtx.drawImage(off.colorCanvas, off.title.x, off.title.y, off.title.w, off.title.h, dstX, dstTitleY, dstTitleW, dstTitleH);
+          gCtx.drawImage(off.alphaCanvas, off.title.x, off.title.y, off.title.w, off.title.h, dstX, dstTitleY, dstTitleW, dstTitleH);
           gCtx.globalAlpha = 1;
         }
       );
+      // Redraw text on top of shadow (matching Live page)
+      if (off.eyebrow.w > 0) {
+        ctx.globalAlpha = eyebrowValues.opacity;
+        ctx.drawImage(offCanvas, off.eyebrow.x, off.eyebrow.y, off.eyebrow.w, off.eyebrow.h, dstX, dstEyebrowY, dstEyebrowW, dstEyebrowH);
+      }
+      ctx.globalAlpha = nameValues.opacity;
+      ctx.drawImage(offCanvas, off.name.x, off.name.y, off.name.w, off.name.h, dstX, dstNameY, dstNameW, dstNameH);
+      ctx.globalAlpha = titleValues.opacity;
+      ctx.drawImage(offCanvas, off.title.x, off.title.y, off.title.w, off.title.h, dstX, dstTitleY, dstTitleW, dstTitleH);
+      ctx.globalAlpha = 1;
     }
 
     return; // Meta rendering complete — skip standard text rendering
@@ -764,8 +786,6 @@ async function renderFramesToPNGs(
   // Total frames = full timeline + 3 extra blank tail frames to guarantee out-animation completes
   const totalFrames = Math.ceil(timelineDuration * fps) + 3;
 
-  console.log(`[Export] Rendering ${totalFrames} frames @ ${fps}fps | animDur=${animDur}ms dwellDur=${dwellDur}ms timelineDuration=${timelineDuration.toFixed(3)}s total=${(animDur*2+dwellDur)/1000}s`);
-
   const frames: Uint8Array[] = [];
 
   // For Meta animation: create offscreen canvases once (pre-rendered at MAX scale)
@@ -781,11 +801,6 @@ async function renderFramesToPNGs(
     const clampedTime = Math.min(timeSec, timelineDuration);
     controller.seekTo(clampedTime);
     const values = controller.getValues();
-
-    // Log first, last, and key transition frames
-    if (frame === 0 || frame === totalFrames - 1 || frame === Math.floor(animDur / 1000 * fps) || frame === Math.floor((animDur + dwellDur) / 1000 * fps)) {
-      console.log(`[Export] Frame ${frame}/${totalFrames} t=${timeSec.toFixed(3)}s opacity=${values.name.opacity.toFixed(3)}`);
-    }
 
     drawFrameToCanvas(cue, ctx, width, height, values, bgColor, isAlpha, logoImage, metaOffscreen);
 
@@ -1308,7 +1323,7 @@ export default function Export() {
                   }
                 }
               }
-              console.log(`[Export] Patched alpha_type in ${framesPatchedCount} ProRes frame headers`);
+              
 
               // ── Patch 2: MOV container stsd entry ────────────────────────────────
               // Find last 'ap4h' codec tag (stsd atom, not bitstream)
