@@ -9,6 +9,9 @@ const GITHUB_API_URL =
 
 const CURRENT_VERSION = app.getVersion();
 
+let _cachedEtag = null;
+let _cachedRelease = null;
+
 function compareVersions(a, b) {
   const partsA = a.replace(/^v/, "").split(".").map(Number);
   const partsB = b.replace(/^v/, "").split(".").map(Number);
@@ -19,19 +22,43 @@ function compareVersions(a, b) {
   return 0;
 }
 
+function parseRelease(release) {
+  const version = (release.tag_name || "").replace(/^v/, "");
+  const notes = release.body || "";
+  const asset = (release.assets || []).find((a) => a.name.endsWith(".zip"));
+  const downloadUrl = asset ? asset.browser_download_url : release.html_url;
+  return { version, notes, downloadUrl };
+}
+
 function fetchLatestRelease() {
   return new Promise((resolve, reject) => {
-    const request = net.request({
-      url: GITHUB_API_URL,
-      headers: {
-        "User-Agent": "LowerThirdsGenerator",
-        Accept: "application/vnd.github.v3+json",
-      },
-    });
+    const headers = {
+      "User-Agent": "LowerThirdsGenerator",
+      Accept: "application/vnd.github.v3+json",
+    };
+    if (_cachedEtag) {
+      headers["If-None-Match"] = _cachedEtag;
+    }
+
+    const request = net.request({ url: GITHUB_API_URL, headers });
 
     let data = "";
 
     request.on("response", (response) => {
+      if (response.statusCode === 304 && _cachedRelease) {
+        resolve(parseRelease(_cachedRelease));
+        return;
+      }
+
+      if (response.statusCode === 403) {
+        reject(
+          new Error(
+            "Rate limited by GitHub \u2014 try again in a few minutes",
+          ),
+        );
+        return;
+      }
+
       if (response.statusCode !== 200) {
         reject(new Error(`GitHub API returned HTTP ${response.statusCode}`));
         return;
@@ -44,16 +71,13 @@ function fetchLatestRelease() {
       response.on("end", () => {
         try {
           const release = JSON.parse(data);
-          const version = (release.tag_name || "").replace(/^v/, "");
-          const notes = release.body || "";
-          const asset = (release.assets || []).find((a) =>
-            a.name.endsWith(".zip"),
-          );
-          const downloadUrl = asset
-            ? asset.browser_download_url
-            : release.html_url;
 
-          resolve({ version, notes, downloadUrl });
+          const etag = response.headers.etag;
+          const etagVal = Array.isArray(etag) ? etag[0] : etag;
+          if (etagVal) _cachedEtag = etagVal;
+          _cachedRelease = release;
+
+          resolve(parseRelease(release));
         } catch {
           reject(new Error("Failed to parse GitHub release info"));
         }
@@ -237,11 +261,14 @@ async function checkForUpdates(silent = true) {
   } catch (error) {
     console.error("[Updater] Error checking for updates:", error.message);
     if (!silent) {
+      const isRateLimit = error.message && error.message.includes("Rate limited");
       dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
         type: "error",
         title: "Update Check Failed",
         message: "Could not check for updates.",
-        detail: "Please check your network connection and try again.",
+        detail: isRateLimit
+          ? error.message
+          : "Please check your network connection and try again.",
       });
     }
   }

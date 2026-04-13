@@ -181,36 +181,62 @@ export const UPDATE_OVERLAY_SCRIPT = `
     badge.textContent = 'v' + version;
   }
 
+  var _etagCacheKey = 'lt_update_etag';
+  var _dataCacheKey = 'lt_update_data';
+
+  function parseRelease(release, localVersion) {
+    var remoteVersion = (release.tag_name || '').replace(/^v/, '');
+    var notes = release.body || '';
+    var assets = release.assets || [];
+    var asset = null;
+    for (var i = 0; i < assets.length; i++) {
+      if (assets[i].name.indexOf('.zip') !== -1) { asset = assets[i]; break; }
+    }
+    var downloadUrl = asset ? asset.browser_download_url : release.html_url;
+
+    return {
+      currentVersion: localVersion,
+      remoteVersion: remoteVersion,
+      notes: notes,
+      downloadUrl: downloadUrl,
+      hasUpdate: compareVersions(remoteVersion, localVersion) > 0
+    };
+  }
+
   function checkForUpdate() {
     var localVersion = window.__LT_VERSION;
     var updateUrl = window.__LT_UPDATE_URL;
 
     if (!localVersion || !updateUrl) return Promise.resolve(null);
 
-    return fetch(updateUrl, {
-      headers: { 'Accept': 'application/vnd.github.v3+json' }
-    })
-    .then(function(r) {
-      if (!r.ok) throw new Error('GitHub API returned ' + r.status);
-      return r.json();
-    })
-    .then(function(release) {
-      var remoteVersion = (release.tag_name || '').replace(/^v/, '');
-      var notes = release.body || '';
-      var assets = release.assets || [];
-      var asset = null;
-      for (var i = 0; i < assets.length; i++) {
-        if (assets[i].name.indexOf('.zip') !== -1) { asset = assets[i]; break; }
-      }
-      var downloadUrl = asset ? asset.browser_download_url : release.html_url;
+    var headers = { 'Accept': 'application/vnd.github.v3+json' };
+    try {
+      var cachedEtag = localStorage.getItem(_etagCacheKey);
+      if (cachedEtag) headers['If-None-Match'] = cachedEtag;
+    } catch (e) {}
 
-      return {
-        currentVersion: localVersion,
-        remoteVersion: remoteVersion,
-        notes: notes,
-        downloadUrl: downloadUrl,
-        hasUpdate: compareVersions(remoteVersion, localVersion) > 0
-      };
+    return fetch(updateUrl, { headers: headers })
+    .then(function(r) {
+      if (r.status === 304) {
+        try {
+          var cached = JSON.parse(localStorage.getItem(_dataCacheKey));
+          if (cached) return parseRelease(cached, localVersion);
+        } catch (e) {}
+        return null;
+      }
+      if (r.status === 403) {
+        throw new Error('Rate limited by GitHub \\u2014 try again in a few minutes');
+      }
+      if (!r.ok) throw new Error('GitHub API returned ' + r.status);
+
+      var etag = r.headers.get('etag');
+      return r.json().then(function(release) {
+        try {
+          if (etag) localStorage.setItem(_etagCacheKey, etag);
+          localStorage.setItem(_dataCacheKey, JSON.stringify(release));
+        } catch (e) {}
+        return parseRelease(release, localVersion);
+      });
     });
   }
 
@@ -541,9 +567,21 @@ export const UPDATE_OVERLAY_SCRIPT = `
   function init() {
     createStyles();
     setFavicon();
-    setTimeout(checkAndRender, 3000);
     watchForSettings();
     watchForPageChanges();
+
+    var alreadyChecked = false;
+    try { alreadyChecked = sessionStorage.getItem('lt_update_checked') === '1'; } catch (e) {}
+
+    if (!alreadyChecked) {
+      setTimeout(function() {
+        try { sessionStorage.setItem('lt_update_checked', '1'); } catch (e) {}
+        checkAndRender();
+      }, 3000);
+    } else {
+      createVersionBadge(window.__LT_VERSION || '?.?.?');
+    }
+
     setInterval(checkAndRender, POLL_INTERVAL);
   }
 
