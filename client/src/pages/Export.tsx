@@ -1494,14 +1494,14 @@ export default function Export() {
     <>
     <div className="h-screen bg-black text-white flex flex-col font-mono overflow-hidden">
       {/* Nav */}
-      <div className="border-b border-cyan-500/30 px-3 flex items-center justify-between flex-shrink-0 gap-2 min-w-0 h-9">
+      <div className="border-b-2 border-[#00c951] px-3 flex items-center justify-between flex-shrink-0 gap-2 min-w-0 h-14">
         <div className="flex items-center gap-2 min-w-0 shrink">
           <h1 className="text-xs font-bold tracking-wider whitespace-nowrap hidden md:block">LOWER THIRDS GENERATOR</h1>
-          <nav className="flex gap-2">
+          <nav className="flex gap-2 items-center">
             <Link href="/live" className="text-xs hover:text-cyan-400 transition-colors whitespace-nowrap" style={{ color: "#ff0000" }}>LIVE</Link>
             <Link href="/edit" className="text-xs text-gray-400 hover:text-cyan-400 transition-colors whitespace-nowrap">EDIT</Link>
-            <Link href="/export" className="text-xs font-bold flex items-center gap-1 whitespace-nowrap" style={{ color: "oklch(0.789 0.154 211.53)" }}>
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 flex-shrink-0"></span>EXPORT
+            <Link href="/export" className="text-2xl font-bold flex items-center gap-1 whitespace-nowrap" style={{ color: "oklch(0.789 0.154 211.53)" }}>
+              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 flex-shrink-0"></span>EXPORT
             </Link>
             <Link href="/settings" className="text-xs text-gray-400 hover:text-cyan-400 transition-colors whitespace-nowrap">SETTINGS</Link>
           </nav>
@@ -1512,7 +1512,7 @@ export default function Export() {
       {/* Main */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar */}
-        <div className="w-80 border-r border-gray-800 p-6 overflow-y-auto flex-shrink-0">
+        <div className="w-80 border-r border-r-[#22c55e] p-6 overflow-y-auto flex-shrink-0 text-[#eeeeee]">
           <h2 className="text-lg font-bold mb-6 text-cyan-400">EXPORT SETTINGS</h2>
 
           <div className="mb-6">
@@ -1642,7 +1642,7 @@ export default function Export() {
         </div>
 
         {/* Centre — Preview + Queue */}
-        <div className="flex-1 p-6 overflow-y-auto space-y-6">
+        <div className="flex-1 p-6 overflow-y-auto space-y-6 text-[#00c951]">
           {/* Preview */}
           <div>
             <h2 className="text-lg font-bold mb-4 text-cyan-400">PREVIEW</h2>
@@ -1745,7 +1745,7 @@ export default function Export() {
         </div>
 
         {/* Right Sidebar */}
-        <div className="w-72 border-l border-gray-800 p-6 overflow-y-auto flex-shrink-0">
+        <div className="w-72 border-l border-[#22c55e] p-6 overflow-y-auto flex-shrink-0">
           <h2 className="text-lg font-bold mb-6 text-cyan-400">CUE LIST</h2>
           <div className="mb-6">
             <Button onClick={handleExportCueList} disabled={cues.length === 0} className="w-full bg-gray-800 hover:bg-gray-700 text-white mb-2">Export Cue List (JSON)</Button>

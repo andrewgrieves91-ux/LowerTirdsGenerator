@@ -1715,14 +1715,14 @@ export default function Edit() {
   return (
     <div className="min-h-screen bg-black text-white font-mono">
       {/* Top Navigation */}
-      <div className="border-b border-cyan-500/30 px-3 flex items-center justify-between flex-shrink-0 gap-2 min-w-0 h-9">
+      <div className="border-b border-cyan-500/30 px-3 flex items-center justify-between flex-shrink-0 gap-2 min-w-0 h-9" style={{borderBottomColor: 'rgba(0, 146, 184, 1)'}}>
         <div className="flex items-center gap-2 min-w-0 shrink">
           <h1 className="text-xs font-bold tracking-wider whitespace-nowrap hidden md:block">LOWER THIRDS GENERATOR</h1>
           <nav className="flex gap-2">
             <Link href="/live" className="text-xs hover:text-cyan-400 transition-colors whitespace-nowrap" style={{color: '#ff0000'}}>
               LIVE
             </Link>
-            <Link href="/edit" className="text-xs font-bold flex items-center gap-1 whitespace-nowrap" style={{color: 'oklch(0.609 0.126 221.723)'}}>
+            <Link href="/edit" className="text-xs font-bold flex items-center gap-1 whitespace-nowrap" style={{color: 'rgba(0, 146, 184, 1)'}}>
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 flex-shrink-0"></span>
               EDIT
             </Link>
@@ -1741,7 +1741,7 @@ export default function Edit() {
 
       <div className="flex h-[calc(100vh-36px)]">
         {/* Left Sidebar - Controls */}
-        <div className="w-56 sm:w-64 lg:w-72 xl:w-80 border-r border-cyan-500/30 overflow-y-auto p-3 sm:p-4">
+        <div className="w-56 sm:w-64 lg:w-72 xl:w-80 border-r border-cyan-500/30 overflow-y-auto p-3 sm:p-4" style={{borderStyle: 'none'}}>
           <Accordion type="multiple" defaultValue={["text"]} className="space-y-2">
             {/* Text Content */}
             <AccordionItem value="text" className="border border-cyan-500/30 rounded-md">
@@ -2370,7 +2370,7 @@ export default function Edit() {
         </div>
 
         {/* Center - Preview */}
-        <div className="flex-1 flex flex-col p-6 overflow-y-auto min-h-0">
+        <div className="flex-1 flex flex-col p-6 overflow-y-auto min-h-0" style={{border: '1px solid rgba(0, 146, 184, 1)', background: 'unset'}}>
           {/* Preview Controls */}
           <div className="flex items-center justify-between mb-4 flex-shrink-0">
             <h2 className="text-xl font-bold text-cyan-400">PREVIEW</h2>
@@ -2512,7 +2512,7 @@ export default function Edit() {
         </div>
 
         {/* Right Sidebar - Save Cue */}
-        <div className="w-80 border-l border-cyan-500/30 overflow-y-auto p-4">
+        <div className="w-80 overflow-y-auto p-4" style={{borderStyle: 'none'}}>
           {/* Save Cue Section */}
           <div className="p-4 border border-cyan-500/30 rounded-md space-y-3">
             <Label className="text-cyan-400 font-semibold">SAVE CUE</Label>

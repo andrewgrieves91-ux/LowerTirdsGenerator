@@ -17,10 +17,10 @@ function getLocalIPs() {
   return ips;
 }
 
-router.get("/network-info", (_req, res) => {
+router.get("/network-info", (req, res) => {
   try {
     const ips = getLocalIPs();
-    const port = Number(process.env.PORT || 3000);
+    const port = req.app.get("port") || Number(process.env.PORT || 3000);
     res.json({ ips, port });
   } catch {
     res.json({ ips: [], port: Number(process.env.PORT || 3000) });

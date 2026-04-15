@@ -33,6 +33,8 @@ async function startServer() {
     tryPort();
   });
 
+  app.set("port", port);
+
   console.log(`Server running on http://localhost:${port}/`);
   console.log(
     `Companion API available at http://localhost:${port}/api/companion`,

@@ -1007,6 +1007,16 @@ export default function Live() {
             shadowCtx.shadowOffsetY = _shadowOffY;
             shadowCtx.shadowColor   = _shadowColor;
             shadowCtx.drawImage(tmpC, 0, 0);
+
+            const _blurPassesMeta = Math.ceil(_shadowBlur / 10);
+            shadowCtx.shadowBlur = 0;
+            shadowCtx.shadowOffsetX = 0;
+            shadowCtx.shadowOffsetY = 0;
+            shadowCtx.shadowColor = 'transparent';
+            for (let _bp = 1; _bp < _blurPassesMeta; _bp++) {
+              shadowCtx.drawImage(shadowC, 0, 0);
+            }
+
             // Step 3: erase glyph pixels — shadow halo only
             shadowCtx.globalCompositeOperation = 'destination-out';
             shadowCtx.drawImage(tmpC, 0, 0);
@@ -1255,6 +1265,15 @@ export default function Live() {
           shadowCtx.shadowOffsetY = currentCue.config.shadowOffsetY ?? 3;
           shadowCtx.shadowColor   = currentCue.config.shadowColor || '#000000';
           shadowCtx.drawImage(glyphC, 0, 0);
+
+          const _blurPasses = Math.ceil((currentCue.config.shadowBlur ?? 10) / 10);
+          shadowCtx.shadowBlur = 0;
+          shadowCtx.shadowOffsetX = 0;
+          shadowCtx.shadowOffsetY = 0;
+          shadowCtx.shadowColor = 'transparent';
+          for (let _bp = 1; _bp < _blurPasses; _bp++) {
+            shadowCtx.drawImage(shadowC, 0, 0);
+          }
 
           // Step 3: erase glyph pixels from shadow canvas — halo only
           shadowCtx.globalCompositeOperation = 'destination-out';
@@ -1664,12 +1683,12 @@ export default function Live() {
   return (
     <div className="h-screen bg-black text-white font-mono flex flex-col overflow-hidden">
       {/* Top Navigation - Fixed at top */}
-      <div className="border-b border-cyan-500/30 px-3 flex items-center justify-between flex-shrink-0 gap-2 min-w-0 h-9">
+      <div className="border-b-2 border-red-500 px-3 flex items-center justify-between flex-shrink-0 gap-2 min-w-0 h-14">
         <div className="flex items-center gap-2 min-w-0 shrink">
           <Link href="/" className="text-xs font-bold tracking-wider whitespace-nowrap hidden md:block text-white hover:text-cyan-400 transition-colors">LOWER THIRDS GENERATOR</Link>
           <nav className="flex gap-2 items-center">
-            <Link href="/live" className="text-xs font-bold flex items-center gap-1 whitespace-nowrap" style={{color: '#ff0000'}}>
-              <span className="w-1.5 h-1.5 rounded-full bg-red-600 flex-shrink-0"></span>
+            <Link href="/live" className="text-2xl font-bold flex items-center gap-1 whitespace-nowrap" style={{color: '#ff0000'}}>
+              <span className="w-2.5 h-2.5 rounded-full bg-red-600 flex-shrink-0"></span>
               LIVE
             </Link>
             <Link href="/edit" className="text-xs hover:text-cyan-400 transition-colors whitespace-nowrap" style={{color: 'oklch(0.609 0.126 221.723)'}}>
@@ -1715,7 +1734,7 @@ export default function Live() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar - Controls */}
-        <div className="w-56 sm:w-64 lg:w-72 xl:w-80 border-r border-cyan-500/30 flex-shrink-0 flex flex-col">
+        <div className="w-56 sm:w-64 lg:w-72 xl:w-80 border-r-2 border-red-500 flex-shrink-0 flex flex-col">
           {/* Play Cue Button - Fixed at top */}
           <div className="p-3 sm:p-4 lg:p-6 pb-3 flex-shrink-0">
             <button
@@ -2147,8 +2166,8 @@ export default function Live() {
         {/* Right Area - Video Feeds - Fixed in place, fills remaining space */}
         <div className="flex-1 p-6 flex flex-col gap-6 overflow-hidden" style={{paddingTop: '5px', paddingRight: '5px', paddingBottom: '5px', paddingLeft: '5px'}}>
           {/* Video 1 (replaces Feed 1 display) */}
-          <div className="border border-cyan-500/30 rounded flex-1 flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between px-3 py-2 border-b border-cyan-500/30 gap-2 flex-wrap">
+          <div className="border-2 border-red-500 rounded flex-1 flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2 border-b-2 border-red-500 gap-2 flex-wrap">
               <div className="min-w-0">
                 <h3 className="text-xs font-bold tracking-wider truncate">VIDEO 1: LIVE OUTPUT</h3>
                 <p className="text-xs text-gray-500 truncate hidden sm:block">Real-time video from Feed 1 canvas</p>
@@ -2210,8 +2229,8 @@ export default function Live() {
 
           {/* Filter 1 — hidden by default, shown when enabled in Settings */}
           {showFilter1 && (
-          <div className="border border-cyan-500/30 rounded flex-1 flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between px-3 py-2 border-b border-cyan-500/30 gap-2 flex-wrap">
+          <div className="border-2 border-red-500 rounded flex-1 flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2 border-b-2 border-red-500 gap-2 flex-wrap">
               <div className="min-w-0">
                 <h3 className="text-xs font-bold tracking-wider truncate">FILTER 1: LIVE VIDEO</h3>
                 <p className="text-xs text-gray-500 truncate hidden sm:block">Real-time video output from Feed 1</p>
