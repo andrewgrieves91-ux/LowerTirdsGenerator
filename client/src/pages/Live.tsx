@@ -437,7 +437,7 @@ export default function Live() {
     detectScreens();
   }, []);
 
-  // Load cues from localStorage — runs once on mount only
+  // Load cues from localStorage and sync to server
   useEffect(() => {
     const loadCues = (isInitial = false) => {
       const saved = localStorage.getItem("lower-thirds-cues");
@@ -445,14 +445,17 @@ export default function Live() {
         try {
           const loadedCues = JSON.parse(saved);
           setCues(loadedCues);
-          // On initial load: if we have a persisted selectedCueId from localStorage,
-          // verify it still exists in the loaded cues; fall back to first cue if not.
+          fetch("/api/companion/cues", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ cues: loadedCues }),
+          }).catch(() => {});
           if (isInitial && loadedCues.length > 0) {
             setSelectedCueId(prev => {
               if (prev && loadedCues.some((c: Cue) => c.id === prev)) {
-                return prev; // Persisted selection is still valid
+                return prev;
               }
-              return loadedCues[0].id; // Fall back to first cue
+              return loadedCues[0].id;
             });
           }
         } catch (e) {
@@ -463,12 +466,10 @@ export default function Live() {
 
     loadCues(true);
     
-    // Start timecode generator for frame synchronization
     if (!timecodeRunning) {
       startTimecode();
     }
     
-    // Listen for storage changes (when cues are saved in Edit page)
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "lower-thirds-cues") {
         loadCues(false);
@@ -476,9 +477,13 @@ export default function Live() {
     };
     
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    const pollInterval = setInterval(() => loadCues(false), 2000);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      clearInterval(pollInterval);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Mount-only — do NOT add selectedCueId here, it causes a reload loop
+  }, []);
 
   // Load selected cue — only reset animation if not currently playing
   useEffect(() => {
