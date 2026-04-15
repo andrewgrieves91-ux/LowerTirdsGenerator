@@ -33,12 +33,14 @@ function listenOnFreePort(server, startPort = 3000) {
 }
 
 app.whenReady().then(async () => {
+  process.env.LT_DATA_DIR = app.getPath("userData");
   const { createApp } = await import("../server/app.js");
   const expressApp = createApp();
   httpServer = createServer(expressApp);
 
   serverPort = await listenOnFreePort(httpServer, 3000);
   process.env.PORT = String(serverPort);
+  expressApp.set("port", serverPort);
   console.log(`Express running on http://localhost:${serverPort}`);
 
   mainWindow = new BrowserWindow({

@@ -4,7 +4,8 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const CUES_FILE = path.resolve(__dirname, "..", "..", ".lt-companion-cues.json");
+const DATA_DIR = process.env.LT_DATA_DIR || path.resolve(__dirname, "..", "..");
+const CUES_FILE = path.join(DATA_DIR, ".lt-companion-cues.json");
 
 export function loadCuesFromDisk() {
   try {
