@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const CUES_FILE = path.resolve(__dirname, "..", "..", ".lt-companion-cues.json");
 
-function loadCuesFromDisk() {
+export function loadCuesFromDisk() {
   try {
     if (fs.existsSync(CUES_FILE)) {
       return JSON.parse(fs.readFileSync(CUES_FILE, "utf-8"));

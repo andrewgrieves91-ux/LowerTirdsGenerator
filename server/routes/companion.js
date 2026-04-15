@@ -8,6 +8,7 @@ import {
   getCommandSeq,
   getCues,
   setCues,
+  loadCuesFromDisk,
   getCompanionApiUrl,
   setCompanionApiUrl,
 } from "../state/companionState.js";
@@ -132,7 +133,25 @@ router.get("/status", (_req, res) => {
 // --- Sync to Companion ---
 
 router.post("/sync", async (req, res) => {
-  const cues = getCues();
+  // Accept cues in the request body for immediate freshness, otherwise
+  // re-read from disk to pick up any changes the Edit page persisted.
+  let cues;
+  if (Array.isArray(req.body?.cues) && req.body.cues.length > 0) {
+    cues = req.body.cues;
+    setCues(cues);
+    console.log(`[Sync] Using ${cues.length} cues from request body`);
+  } else {
+    const diskCues = loadCuesFromDisk();
+    if (diskCues.length > 0) {
+      setCues(diskCues);
+      cues = diskCues;
+      console.log(`[Sync] Re-read ${cues.length} cues from disk`);
+    } else {
+      cues = getCues();
+      console.log(`[Sync] Using ${cues.length} cues from memory`);
+    }
+  }
+
   if (cues.length === 0) {
     res.status(400).json({ ok: false, error: "No cues stored. Open the Edit page first to sync cues to the server." });
     return;
@@ -142,12 +161,31 @@ router.post("/sync", async (req, res) => {
   const port = req.app.get("port") || 3000;
   const baseUrl = `http://localhost:${port}`;
 
-  const { buttons, variables, pageRows } = generateButtonLayout(cues, baseUrl);
+  const validCues = cues.filter(c => c && c.cueNumber != null);
+  const { buttons, variables, pageRows } = generateButtonLayout(validCues, baseUrl);
+
+  console.log(`[Sync] Generated ${buttons.length} buttons, ${Object.keys(variables).length} variables, ${pageRows + 1} rows for ${validCues.length} cues`);
 
   const errors = [];
   let buttonsUpdated = 0;
 
-  // 1. Clear existing buttons on page 1 (rows 0..pageRows+5 to be safe)
+  // 1. Set page grid size FIRST so Companion allocates enough rows
+  try {
+    const gridResp = await fetch(`${companionUrl}/api/pages/1`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Cues",
+        gridSize: { minColumn: 0, maxColumn: 7, minRow: 0, maxRow: pageRows },
+      }),
+    });
+    console.log(`[Sync] Grid resize: ${gridResp.status}`);
+  } catch (err) {
+    console.error(`[Sync] Grid resize failed: ${err.message}`);
+    errors.push(`Page grid: ${err.message}`);
+  }
+
+  // 2. Clear existing buttons on page 1 (rows 0..pageRows+5 to be safe)
   for (let row = 0; row <= pageRows + 5; row++) {
     for (let col = 0; col < 8; col++) {
       try {
@@ -155,29 +193,33 @@ router.post("/sync", async (req, res) => {
       } catch { /* ignore — slot may not exist */ }
     }
   }
+  console.log(`[Sync] Cleared existing buttons`);
 
-  // 2. Push each button
+  // 3. Push each button
   for (const btn of buttons) {
+    const url = `${companionUrl}/api/locations/${btn.page}/${btn.row}/${btn.col}`;
+    const body = JSON.stringify(btn.config);
     try {
-      const resp = await fetch(
-        `${companionUrl}/api/locations/${btn.page}/${btn.row}/${btn.col}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(btn.config),
-        }
-      );
+      const resp = await fetch(url, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body,
+      });
       if (resp.ok) {
         buttonsUpdated++;
       } else {
+        const respBody = await resp.text().catch(() => "");
+        console.error(`[Sync] Button ${btn.row}/${btn.col} FAILED: ${resp.status} ${resp.statusText} — ${respBody}`);
         errors.push(`Button ${btn.row}/${btn.col}: ${resp.status} ${resp.statusText}`);
       }
     } catch (err) {
+      console.error(`[Sync] Button ${btn.row}/${btn.col} ERROR: ${err.message}`);
       errors.push(`Button ${btn.row}/${btn.col}: ${err.message}`);
     }
   }
+  console.log(`[Sync] Pushed ${buttonsUpdated}/${buttons.length} buttons`);
 
-  // 3. Push custom variables
+  // 4. Push custom variables
   for (const [name, varDef] of Object.entries(variables)) {
     try {
       await fetch(`${companionUrl}/api/custom-variables/${encodeURIComponent(name)}`, {
@@ -188,20 +230,6 @@ router.post("/sync", async (req, res) => {
     } catch (err) {
       errors.push(`Variable ${name}: ${err.message}`);
     }
-  }
-
-  // 4. Set page grid size
-  try {
-    await fetch(`${companionUrl}/api/pages/1`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: "Cues",
-        gridSize: { minColumn: 0, maxColumn: 7, minRow: 0, maxRow: pageRows },
-      }),
-    });
-  } catch (err) {
-    errors.push(`Page grid: ${err.message}`);
   }
 
   if (errors.length > 0 && buttonsUpdated === 0) {
@@ -215,7 +243,7 @@ router.post("/sync", async (req, res) => {
 
   res.json({
     ok: true,
-    cueCount: cues.length,
+    cueCount: validCues.length,
     buttonsUpdated,
     errors: errors.length > 0 ? errors : undefined,
   });
