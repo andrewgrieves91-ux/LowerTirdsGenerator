@@ -1,9 +1,26 @@
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const CUES_FILE = path.resolve(__dirname, "..", "..", ".lt-companion-cues.json");
+
+function loadCuesFromDisk() {
+  try {
+    if (fs.existsSync(CUES_FILE)) {
+      return JSON.parse(fs.readFileSync(CUES_FILE, "utf-8"));
+    }
+  } catch { /* ignore corrupt file */ }
+  return [];
+}
+
 const state = {
   pendingCommand: null,
   commandAt: 0,
   tally: [],
   commandSeq: 0,
-  cues: [],
+  cues: loadCuesFromDisk(),
   companionApiUrl: "http://localhost:8000",
 };
 
@@ -46,6 +63,7 @@ export function getCues() {
 
 export function setCues(cues) {
   state.cues = cues;
+  try { fs.writeFileSync(CUES_FILE, JSON.stringify(cues)); } catch { /* best-effort */ }
 }
 
 export function getCompanionApiUrl() {

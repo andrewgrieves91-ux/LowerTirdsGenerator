@@ -14,6 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let cachedIndexHtml = null;
+const BOOT_TS = Date.now();
 
 function getIndexHtml(staticPath) {
   if (cachedIndexHtml) return cachedIndexHtml;
@@ -24,7 +25,9 @@ function getIndexHtml(staticPath) {
   const raw = fs.readFileSync(path.join(staticPath, "index.html"), "utf-8");
   const globals = `<script>window.__LT_VERSION=${JSON.stringify(pkg.version)};window.__LT_UPDATE_URL=${JSON.stringify(pkg.updateUrl || "")};</script>`;
   const overlay = `<script id="lt-update-overlay">${UPDATE_OVERLAY_SCRIPT}</script>`;
-  cachedIndexHtml = raw.replace("</body>", `${globals}\n${overlay}\n</body>`);
+  cachedIndexHtml = raw
+    .replace("</body>", `${globals}\n${overlay}\n</body>`)
+    .replace(/(src="\/assets\/[^"]+\.js)(")/g, `$1?v=${BOOT_TS}$2`);
   return cachedIndexHtml;
 }
 
@@ -43,7 +46,14 @@ export function createApp() {
   app.use("/api/companion", companionRouter);
   app.use("/api/update", updateRouter);
 
-  app.use(express.static(staticPath, { index: false }));
+  app.use(express.static(staticPath, {
+    index: false,
+    setHeaders(res, filePath) {
+      if (filePath.endsWith(".js")) {
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      }
+    },
+  }));
   app.get("*", (_req, res) => {
     const html = getIndexHtml(staticPath);
     res.type("html").send(html);

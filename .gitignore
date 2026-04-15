@@ -11,3 +11,4 @@ dist/builder-debug.yml
 .dmg-staging/
 releases/*.zip
 releases/*.dmg
+.lt-companion-cues.json
