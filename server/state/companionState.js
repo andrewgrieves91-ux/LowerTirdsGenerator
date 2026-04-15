@@ -3,6 +3,8 @@ const state = {
   commandAt: 0,
   tally: [],
   commandSeq: 0,
+  cues: [],
+  companionApiUrl: "http://localhost:8000",
 };
 
 export function dispatchCommand(res, command) {
@@ -36,6 +38,22 @@ export function setTally(tally) {
 
 export function getCommandSeq() {
   return state.commandSeq;
+}
+
+export function getCues() {
+  return state.cues;
+}
+
+export function setCues(cues) {
+  state.cues = cues;
+}
+
+export function getCompanionApiUrl() {
+  return state.companionApiUrl;
+}
+
+export function setCompanionApiUrl(url) {
+  state.companionApiUrl = url;
 }
 
 export default state;

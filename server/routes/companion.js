@@ -6,12 +6,20 @@ import {
   getTally,
   setTally,
   getCommandSeq,
+  getCues,
+  setCues,
+  getCompanionApiUrl,
+  setCompanionApiUrl,
 } from "../state/companionState.js";
 import {
   cueNumberParam,
   tallyArraySchema,
   ackBodySchema,
 } from "../validation.js";
+import {
+  generateCompanionConfig,
+  generateButtonLayout,
+} from "../companionConfig.js";
 
 const router = Router();
 
@@ -119,6 +127,139 @@ router.get("/status", (_req, res) => {
     played: playedCues,
     commandSeq: getCommandSeq(),
   });
+});
+
+// --- Sync to Companion ---
+
+router.post("/sync", async (req, res) => {
+  const cues = getCues();
+  if (cues.length === 0) {
+    res.status(400).json({ ok: false, error: "No cues stored. Open the Edit page first to sync cues to the server." });
+    return;
+  }
+
+  const companionUrl = getCompanionApiUrl();
+  const port = req.app.get("port") || 3000;
+  const baseUrl = `http://localhost:${port}`;
+
+  const { buttons, variables, pageRows } = generateButtonLayout(cues, baseUrl);
+
+  const errors = [];
+  let buttonsUpdated = 0;
+
+  // 1. Clear existing buttons on page 1 (rows 0..pageRows+5 to be safe)
+  for (let row = 0; row <= pageRows + 5; row++) {
+    for (let col = 0; col < 8; col++) {
+      try {
+        await fetch(`${companionUrl}/api/locations/1/${row}/${col}`, { method: "DELETE" });
+      } catch { /* ignore — slot may not exist */ }
+    }
+  }
+
+  // 2. Push each button
+  for (const btn of buttons) {
+    try {
+      const resp = await fetch(
+        `${companionUrl}/api/locations/${btn.page}/${btn.row}/${btn.col}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(btn.config),
+        }
+      );
+      if (resp.ok) {
+        buttonsUpdated++;
+      } else {
+        errors.push(`Button ${btn.row}/${btn.col}: ${resp.status} ${resp.statusText}`);
+      }
+    } catch (err) {
+      errors.push(`Button ${btn.row}/${btn.col}: ${err.message}`);
+    }
+  }
+
+  // 3. Push custom variables
+  for (const [name, varDef] of Object.entries(variables)) {
+    try {
+      await fetch(`${companionUrl}/api/custom-variables/${encodeURIComponent(name)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(varDef),
+      });
+    } catch (err) {
+      errors.push(`Variable ${name}: ${err.message}`);
+    }
+  }
+
+  // 4. Set page grid size
+  try {
+    await fetch(`${companionUrl}/api/pages/1`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Cues",
+        gridSize: { minColumn: 0, maxColumn: 7, minRow: 0, maxRow: pageRows },
+      }),
+    });
+  } catch (err) {
+    errors.push(`Page grid: ${err.message}`);
+  }
+
+  if (errors.length > 0 && buttonsUpdated === 0) {
+    res.status(502).json({
+      ok: false,
+      error: `Could not reach Companion at ${companionUrl}. Check the Companion API URL in Settings.`,
+      details: errors,
+    });
+    return;
+  }
+
+  res.json({
+    ok: true,
+    cueCount: cues.length,
+    buttonsUpdated,
+    errors: errors.length > 0 ? errors : undefined,
+  });
+});
+
+// --- Config download ---
+
+router.get("/config.companionconfig", (req, res) => {
+  const cues = getCues();
+  const port = req.app.get("port") || 3000;
+  const baseUrl = `http://localhost:${port}`;
+  const config = generateCompanionConfig(cues, baseUrl);
+  res.setHeader("Content-Disposition", "attachment; filename=lower-thirds.companionconfig");
+  res.json(config);
+});
+
+// --- Cue storage ---
+
+router.get("/cues", (_req, res) => {
+  res.json({ cues: getCues() });
+});
+
+router.post("/cues", (req, res) => {
+  const { cues } = req.body;
+  if (!Array.isArray(cues)) {
+    res.status(400).json({ ok: false, error: "cues must be an array" });
+    return;
+  }
+  setCues(cues);
+  res.json({ ok: true, count: cues.length });
+});
+
+// --- Companion API settings ---
+
+router.get("/settings", (_req, res) => {
+  res.json({ companionApiUrl: getCompanionApiUrl() });
+});
+
+router.put("/settings", (req, res) => {
+  const { companionApiUrl } = req.body;
+  if (typeof companionApiUrl === "string" && companionApiUrl.trim()) {
+    setCompanionApiUrl(companionApiUrl.trim());
+  }
+  res.json({ ok: true, companionApiUrl: getCompanionApiUrl() });
 });
 
 export default router;

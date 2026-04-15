@@ -523,9 +523,14 @@ export default function Edit() {
     }
   }, []);
 
-  // Save cues to localStorage whenever they change
+  // Save cues to localStorage and sync to server whenever they change
   useEffect(() => {
     localStorage.setItem("lower-thirds-cues", JSON.stringify(cues));
+    fetch("/api/companion/cues", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cues }),
+    }).catch(() => {});
   }, [cues]);
 
   // Load custom presets from localStorage on mount
