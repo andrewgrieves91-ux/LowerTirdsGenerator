@@ -40,7 +40,7 @@ export function createApp() {
       : path.resolve(__dirname, "..", "dist", "public");
 
   app.use(headerRouter);
-  app.use(express.json());
+  app.use(express.json({ limit: '2mb' }));
 
   app.use("/api", networkRouter);
   app.use("/api/companion", companionRouter);
