@@ -6,6 +6,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_DIR = process.env.LT_DATA_DIR || path.resolve(__dirname, "..", "..");
 const CUES_FILE = path.join(DATA_DIR, ".lt-companion-cues.json");
+const GRID_LAYOUT_FILE = path.join(DATA_DIR, ".lt-companion-grid-layout.json");
+const GRID_SIZE_FILE = path.join(DATA_DIR, ".lt-companion-grid-size.json");
 
 export function loadCuesFromDisk() {
   try {
@@ -16,6 +18,24 @@ export function loadCuesFromDisk() {
   return [];
 }
 
+function loadGridLayoutFromDisk() {
+  try {
+    if (fs.existsSync(GRID_LAYOUT_FILE)) {
+      return JSON.parse(fs.readFileSync(GRID_LAYOUT_FILE, "utf-8"));
+    }
+  } catch { /* ignore corrupt file */ }
+  return null;
+}
+
+function loadGridSizeFromDisk() {
+  try {
+    if (fs.existsSync(GRID_SIZE_FILE)) {
+      return JSON.parse(fs.readFileSync(GRID_SIZE_FILE, "utf-8"));
+    }
+  } catch { /* ignore corrupt file */ }
+  return null;
+}
+
 const state = {
   pendingCommand: null,
   commandAt: 0,
@@ -23,6 +43,8 @@ const state = {
   commandSeq: 0,
   cues: loadCuesFromDisk(),
   companionApiUrl: "http://localhost:8000",
+  gridLayout: loadGridLayoutFromDisk(),
+  gridSize: loadGridSizeFromDisk(),
 };
 
 export function dispatchCommand(res, command) {
@@ -73,6 +95,24 @@ export function getCompanionApiUrl() {
 
 export function setCompanionApiUrl(url) {
   state.companionApiUrl = url;
+}
+
+export function getGridLayout() {
+  return state.gridLayout;
+}
+
+export function getGridSize() {
+  return state.gridSize;
+}
+
+export function setGridLayout(layout) {
+  state.gridLayout = layout;
+  try { fs.writeFileSync(GRID_LAYOUT_FILE, JSON.stringify(layout)); } catch { /* best-effort */ }
+}
+
+export function setGridSize(size) {
+  state.gridSize = size;
+  try { fs.writeFileSync(GRID_SIZE_FILE, JSON.stringify(size)); } catch { /* best-effort */ }
 }
 
 export default state;

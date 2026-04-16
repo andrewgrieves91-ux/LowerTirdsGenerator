@@ -12,3 +12,5 @@ dist/builder-debug.yml
 releases/*.zip
 releases/*.dmg
 .lt-companion-cues.json
+.lt-companion-grid-layout.json
+.lt-companion-grid-size.json
