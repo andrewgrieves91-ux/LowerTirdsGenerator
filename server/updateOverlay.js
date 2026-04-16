@@ -244,16 +244,9 @@ export const UPDATE_OVERLAY_SCRIPT = `
     var existing = document.getElementById('lt-settings-update');
     if (existing) existing.remove();
 
-    var generalTab = document.querySelector('[data-loc*="Settings.tsx:551"]');
+    var generalTab = document.querySelector('[data-loc*="Settings.tsx:869"]');
     if (!generalTab) {
-      var targets = document.querySelectorAll('[data-loc*="Settings.tsx"]');
-      if (targets.length === 0) return;
-      for (var i = 0; i < targets.length; i++) {
-        if (targets[i].className && targets[i].className.indexOf('space-y') !== -1) {
-          generalTab = targets[i];
-          break;
-        }
-      }
+      var generalTab = document.querySelector('[data-loc*="Settings.tsx:871"]');
     }
     if (!generalTab) return;
 
