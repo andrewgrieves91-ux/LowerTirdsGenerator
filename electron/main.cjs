@@ -97,7 +97,7 @@ app.whenReady().then(async () => {
     }
   });
 
-  setTimeout(() => checkForUpdates(true), 3000);
+  setTimeout(() => checkForUpdates(true), 15000);
 });
 
 app.on("before-quit", () => {

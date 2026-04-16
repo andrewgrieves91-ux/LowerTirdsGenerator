@@ -323,10 +323,35 @@ export const UPDATE_OVERLAY_SCRIPT = `
       .catch(function() {});
   }
 
-  var settingsObserver = null;
-  function watchForSettings() {
-    if (settingsObserver) return;
+  function installRouteHook() {
+    if (window.__ltRouteHookInstalled) return;
+    window.__ltRouteHookInstalled = true;
+    try {
+      var origPush = history.pushState;
+      var origReplace = history.replaceState;
+      history.pushState = function() {
+        var r = origPush.apply(this, arguments);
+        try { window.dispatchEvent(new Event('lt:routechange')); } catch (e) {}
+        return r;
+      };
+      history.replaceState = function() {
+        var r = origReplace.apply(this, arguments);
+        try { window.dispatchEvent(new Event('lt:routechange')); } catch (e) {}
+        return r;
+      };
+      window.addEventListener('popstate', function() {
+        try { window.dispatchEvent(new Event('lt:routechange')); } catch (e) {}
+      });
+    } catch (e) {}
+  }
 
+  var _settingsWatchInstalled = false;
+  function watchForSettings() {
+    if (_settingsWatchInstalled) return;
+    _settingsWatchInstalled = true;
+    installRouteHook();
+
+    var scheduled = false;
     function tryInject() {
       var targets = document.querySelectorAll('[data-loc*="Settings.tsx"]');
       if (targets.length > 0) {
@@ -342,11 +367,19 @@ export const UPDATE_OVERLAY_SCRIPT = `
         if (existing) existing.remove();
       }
     }
+    function scheduleInject() {
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(function() {
+        scheduled = false;
+        tryInject();
+      });
+    }
 
-    settingsObserver = new MutationObserver(function() {
-      requestAnimationFrame(tryInject);
-    });
-    settingsObserver.observe(document.body, { childList: true, subtree: true });
+    window.addEventListener('lt:routechange', scheduleInject);
+    window.addEventListener('load', scheduleInject);
+    setInterval(scheduleInject, 2000);
+    scheduleInject();
   }
 
   function setFavicon() {
@@ -534,10 +567,13 @@ export const UPDATE_OVERLAY_SCRIPT = `
     }
   }
 
-  var pageObserver = null;
+  var _pageWatchInstalled = false;
   function watchForPageChanges() {
-    if (pageObserver) return;
+    if (_pageWatchInstalled) return;
+    _pageWatchInstalled = true;
+    installRouteHook();
 
+    var scheduled = false;
     function applyPageUI() {
       var root = document.getElementById('root');
       if (!root || !root.firstElementChild) return;
@@ -545,12 +581,19 @@ export const UPDATE_OVERLAY_SCRIPT = `
       customizeHomePage();
       makeHeaderClickable();
     }
+    function scheduleApply() {
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(function() {
+        scheduled = false;
+        applyPageUI();
+      });
+    }
 
-    pageObserver = new MutationObserver(function() {
-      requestAnimationFrame(applyPageUI);
-    });
-    pageObserver.observe(document.getElementById('root') || document.body, { childList: true, subtree: true });
-    applyPageUI();
+    window.addEventListener('lt:routechange', scheduleApply);
+    window.addEventListener('load', scheduleApply);
+    setInterval(scheduleApply, 2000);
+    scheduleApply();
   }
 
   function init() {
