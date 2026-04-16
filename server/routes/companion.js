@@ -132,25 +132,24 @@ router.get("/status", (_req, res) => {
 
 // --- Sync to Companion ---
 //
-// Companion 4.x HTTP API (non-deprecated):
-//   POST /api/location/<page>/<row>/<col>/style?text=...&bgcolor=HEX&color=HEX
-//   POST /api/custom-variable/<name>/value?value=...
-//
-// This API can update existing button styles and variable values but cannot
-// create new buttons. For added/removed cues the user must re-import the config.
+// Uses Companion's internal REST API (PUT /api/locations) to fully create,
+// update, and delete buttons. This handles added/removed/reordered cues.
 
 router.post("/sync", async (req, res) => {
   let cues;
   if (Array.isArray(req.body?.cues) && req.body.cues.length > 0) {
     cues = req.body.cues;
     setCues(cues);
+    console.log(`[Sync] Using ${cues.length} cues from request body`);
   } else {
     const diskCues = loadCuesFromDisk();
     if (diskCues.length > 0) {
       setCues(diskCues);
       cues = diskCues;
+      console.log(`[Sync] Re-read ${cues.length} cues from disk`);
     } else {
       cues = getCues();
+      console.log(`[Sync] Using ${cues.length} cues from memory`);
     }
   }
 
@@ -163,65 +162,81 @@ router.post("/sync", async (req, res) => {
   const port = req.app.get("port") || 3000;
   const baseUrl = `http://localhost:${port}`;
   const validCues = cues.filter(c => c && c.cueNumber != null);
-  const { buttons, variables } = generateButtonLayout(validCues, baseUrl);
+  const { buttons, variables, pageRows } = generateButtonLayout(validCues, baseUrl);
+
+  console.log(`[Sync] Generated ${buttons.length} buttons, ${Object.keys(variables).length} variables, ${pageRows + 1} rows`);
 
   const errors = [];
-  let stylesUpdated = 0;
-  let variablesSet = 0;
+  let buttonsUpdated = 0;
 
-  // 1. Update existing button styles via Companion 4.x HTTP API
+  // 1. Set page grid size FIRST so Companion allocates enough rows
+  try {
+    const gridResp = await fetch(`${companionUrl}/api/pages/1`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Cues",
+        gridSize: { minColumn: 0, maxColumn: 7, minRow: 0, maxRow: pageRows },
+      }),
+    });
+    console.log(`[Sync] Grid resize: ${gridResp.status}`);
+  } catch (err) {
+    console.error(`[Sync] Grid resize failed: ${err.message}`);
+    errors.push(`Page grid: ${err.message}`);
+  }
+
+  // 2. Clear existing buttons on page 1
+  for (let row = 0; row <= pageRows + 5; row++) {
+    for (let col = 0; col < 8; col++) {
+      try {
+        await fetch(`${companionUrl}/api/locations/1/${row}/${col}`, { method: "DELETE" });
+      } catch { /* ignore — slot may not exist */ }
+    }
+  }
+  console.log(`[Sync] Cleared existing buttons`);
+
+  // 3. Push each button with full config (creates new buttons)
   for (const btn of buttons) {
-    const text = encodeURIComponent(btn.config.style?.text || "");
-    const bgcolor = (btn.config.style?.bgcolor ?? 0).toString(16).padStart(6, "0");
-    const color = (btn.config.style?.color ?? 0xffffff).toString(16).padStart(6, "0");
-    const url = `${companionUrl}/api/location/${btn.page}/${btn.row}/${btn.col}/style?text=${text}&color=${color}&bgcolor=${bgcolor}`;
     try {
-      const resp = await fetch(url, { method: "POST" });
+      const resp = await fetch(
+        `${companionUrl}/api/locations/${btn.page}/${btn.row}/${btn.col}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(btn.config),
+        }
+      );
       if (resp.ok) {
-        stylesUpdated++;
-      } else if (resp.status === 403) {
-        errors.push("HTTP API is disabled in Companion. Enable it in Settings > Protocols.");
-        break;
+        buttonsUpdated++;
       } else {
-        errors.push(`Style ${btn.row}/${btn.col}: ${resp.status}`);
+        const respBody = await resp.text().catch(() => "");
+        console.error(`[Sync] Button ${btn.row}/${btn.col} FAILED: ${resp.status} — ${respBody}`);
+        errors.push(`Button ${btn.row}/${btn.col}: ${resp.status} ${resp.statusText}`);
       }
     } catch (err) {
-      errors.push(`Style ${btn.row}/${btn.col}: ${err.message}`);
-      break;
+      console.error(`[Sync] Button ${btn.row}/${btn.col} ERROR: ${err.message}`);
+      errors.push(`Button ${btn.row}/${btn.col}: ${err.message}`);
+    }
+  }
+  console.log(`[Sync] Pushed ${buttonsUpdated}/${buttons.length} buttons`);
+
+  // 4. Push custom variables
+  for (const [name, varDef] of Object.entries(variables)) {
+    try {
+      await fetch(`${companionUrl}/api/custom-variables/${encodeURIComponent(name)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(varDef),
+      });
+    } catch (err) {
+      errors.push(`Variable ${name}: ${err.message}`);
     }
   }
 
-  // 2. Reset custom variable values
-  for (const [name, varDef] of Object.entries(variables)) {
-    const val = encodeURIComponent(varDef.defaultValue ?? "");
-    try {
-      const resp = await fetch(
-        `${companionUrl}/api/custom-variable/${encodeURIComponent(name)}/value?value=${val}`,
-        { method: "POST" },
-      );
-      if (resp.ok) variablesSet++;
-    } catch { /* best-effort */ }
-  }
-
-  // 3. Always regenerate the config file so it's ready for re-import
-  const configUrl = `${baseUrl}/api/companion/config.companionconfig`;
-
-  const has403 = errors.some(e => e.includes("403") || e.includes("disabled"));
-  if (has403) {
+  if (errors.length > 0 && buttonsUpdated === 0) {
     res.status(502).json({
       ok: false,
-      error: "Companion HTTP Remote Control is disabled. Enable it in Companion Settings > HTTP Remote Control, then retry. "
-        + `Alternatively, re-import the config from: ${configUrl}`,
-      configUrl,
-    });
-    return;
-  }
-
-  if (errors.length > 0 && stylesUpdated === 0) {
-    res.status(502).json({
-      ok: false,
-      error: `Could not reach Companion at ${companionUrl}. Is Companion running?`,
-      configUrl,
+      error: `Could not reach Companion at ${companionUrl}. Check the Companion API URL in Settings.`,
       details: errors,
     });
     return;
@@ -230,12 +245,7 @@ router.post("/sync", async (req, res) => {
   res.json({
     ok: true,
     cueCount: validCues.length,
-    stylesUpdated,
-    variablesSet,
-    configUrl,
-    message: stylesUpdated > 0
-      ? `Updated ${stylesUpdated} button labels. If you added or removed cues, re-import the config from the Export page.`
-      : `Config regenerated. Download from: ${configUrl}`,
+    buttonsUpdated,
     errors: errors.length > 0 ? errors : undefined,
   });
 });
