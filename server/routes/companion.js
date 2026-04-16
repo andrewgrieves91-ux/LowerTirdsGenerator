@@ -132,18 +132,12 @@ router.get("/status", (_req, res) => {
 
 // --- Sync to Companion ---
 //
-// Companion 4.x HTTP API supports updating existing button styles and setting
-// custom variable values. It does NOT support creating new buttons via REST.
+// Companion 4.x HTTP API (non-deprecated):
+//   POST /api/location/<page>/<row>/<col>/style?text=...&bgcolor=HEX&color=HEX
+//   POST /api/custom-variable/<name>/value?value=...
 //
-// Flow:
-//   1. Update style (text/color) of existing cue buttons via /style/bank/
-//   2. Reset custom variable values via /set/custom-variable/
-//   3. Re-generate the .companionconfig so the user can re-import if buttons
-//      were added or removed.
-
-function bankNumber(row, col, cols = 8) {
-  return row * cols + col + 1;
-}
+// This API can update existing button styles and variable values but cannot
+// create new buttons. For added/removed cues the user must re-import the config.
 
 router.post("/sync", async (req, res) => {
   let cues;
@@ -169,32 +163,30 @@ router.post("/sync", async (req, res) => {
   const port = req.app.get("port") || 3000;
   const baseUrl = `http://localhost:${port}`;
   const validCues = cues.filter(c => c && c.cueNumber != null);
-  const { buttons, variables, pageRows } = generateButtonLayout(validCues, baseUrl);
+  const { buttons, variables } = generateButtonLayout(validCues, baseUrl);
 
   const errors = [];
   let stylesUpdated = 0;
   let variablesSet = 0;
 
   // 1. Update existing button styles via Companion 4.x HTTP API
-  //    GET /style/bank/{page}/{button}?text=...&color=RRGGBB&bgcolor=RRGGBB
   for (const btn of buttons) {
-    const bank = bankNumber(btn.row, btn.col);
     const text = encodeURIComponent(btn.config.style?.text || "");
     const bgcolor = (btn.config.style?.bgcolor ?? 0).toString(16).padStart(6, "0");
     const color = (btn.config.style?.color ?? 0xffffff).toString(16).padStart(6, "0");
-    const url = `${companionUrl}/style/bank/${btn.page}/${bank}?text=${text}&color=${color}&bgcolor=${bgcolor}`;
+    const url = `${companionUrl}/api/location/${btn.page}/${btn.row}/${btn.col}/style?text=${text}&color=${color}&bgcolor=${bgcolor}`;
     try {
-      const resp = await fetch(url);
+      const resp = await fetch(url, { method: "POST" });
       if (resp.ok) {
         stylesUpdated++;
       } else if (resp.status === 403) {
-        errors.push("HTTP Remote Control is disabled in Companion. Enable it in Companion Settings.");
+        errors.push("HTTP API is disabled in Companion. Enable it in Settings > Protocols.");
         break;
       } else {
-        errors.push(`Style bank/${btn.page}/${bank}: ${resp.status}`);
+        errors.push(`Style ${btn.row}/${btn.col}: ${resp.status}`);
       }
     } catch (err) {
-      errors.push(`Style bank/${btn.page}/${bank}: ${err.message}`);
+      errors.push(`Style ${btn.row}/${btn.col}: ${err.message}`);
       break;
     }
   }
@@ -203,7 +195,10 @@ router.post("/sync", async (req, res) => {
   for (const [name, varDef] of Object.entries(variables)) {
     const val = encodeURIComponent(varDef.defaultValue ?? "");
     try {
-      const resp = await fetch(`${companionUrl}/set/custom-variable/${encodeURIComponent(name)}?value=${val}`);
+      const resp = await fetch(
+        `${companionUrl}/api/custom-variable/${encodeURIComponent(name)}/value?value=${val}`,
+        { method: "POST" },
+      );
       if (resp.ok) variablesSet++;
     } catch { /* best-effort */ }
   }
