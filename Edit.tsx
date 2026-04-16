@@ -283,6 +283,8 @@ interface CustomPreset {
     fontWeight: string;
     bold: boolean;
     underline: boolean;
+    underlineThickness: number;
+    underlineOffset: number;
     italic: boolean;
     posX: number;
     posY: number;
@@ -318,6 +320,8 @@ interface Cue {
     fontWeight: string;
     bold: boolean;
     underline: boolean;
+    underlineThickness: number;
+    underlineOffset: number;
     italic: boolean;
     posX: number;
     posY: number;
@@ -351,6 +355,8 @@ export default function Edit() {
   const [titleFontWeight, setTitleFontWeight] = useState<string | undefined>("400");
   const [bold, setBold] = useState(false);
   const [underline, setUnderline] = useState(false);
+  const [underlineThickness, setUnderlineThickness] = useState(2);
+  const [underlineOffset, setUnderlineOffset] = useState(2);
   const [italic, setItalic] = useState(false);
   const [posX, setPosX] = useState(209);
   const [posY, setPosY] = useState(852);
@@ -573,6 +579,8 @@ export default function Edit() {
       loadedCue.config.titleFontSizePercent !== titleFontSizePercent ||
       loadedCue.config.bold !== bold ||
       loadedCue.config.underline !== underline ||
+      (loadedCue.config.underlineThickness ?? 2) !== underlineThickness ||
+      (loadedCue.config.underlineOffset ?? 2) !== underlineOffset ||
       loadedCue.config.italic !== italic ||
       loadedCue.config.posX !== posX ||
       loadedCue.config.posY !== posY ||
@@ -590,7 +598,7 @@ export default function Edit() {
       loadedCue.config.borderColor !== borderColor;
 
     setHasUnsavedChanges(hasChanges);
-  }, [loadedCueId, cues, name, title, font, fontSize, titleFontSizePercent, bold, underline, italic, posX, posY, color, animationType, animationDuration, dwellDuration, shadowEnabled, shadowBlur, shadowOffsetX, shadowOffsetY, shadowColor, shadowStrength, borderEnabled, borderWidth, borderColor]);
+  }, [loadedCueId, cues, name, title, font, fontSize, titleFontSizePercent, bold, underline, underlineThickness, underlineOffset, italic, posX, posY, color, animationType, animationDuration, dwellDuration, shadowEnabled, shadowBlur, shadowOffsetX, shadowOffsetY, shadowColor, shadowStrength, borderEnabled, borderWidth, borderColor]);
 
   // Preview animation using GSAP
   useEffect(() => {
@@ -612,6 +620,8 @@ export default function Edit() {
         fontWeight,
         bold,
         underline,
+        underlineThickness,
+        underlineOffset,
         italic,
         posX,
         posY,
@@ -861,6 +871,71 @@ export default function Edit() {
           drawScaled(colorCtx, off.colorCanvas, off.name, dstX - pad * s, dstNameY - pad * s, values.name.opacity);
           drawScaled(colorCtx, off.colorCanvas, off.title, dstX - pad * s, dstTitleY - pad * s, values.title.opacity);
         }
+
+        if (underline) {
+          if (eyebrow) {
+            colorCtx.font = eyebrowFontString;
+            const eyeUlW = colorCtx.measureText(eyebrow).width;
+            const eyeUlY = dstEyebrowY + baseEyebrowFontSize + underlineOffset;
+            colorCtx.strokeStyle = color;
+            colorCtx.lineWidth = underlineThickness;
+            colorCtx.globalAlpha = values.eyebrow.opacity;
+            colorCtx.beginPath();
+            colorCtx.moveTo(dstX, eyeUlY);
+            colorCtx.lineTo(dstX + eyeUlW, eyeUlY);
+            colorCtx.stroke();
+
+            alphaCtx.strokeStyle = "#FFFFFF";
+            alphaCtx.font = eyebrowFontString;
+            alphaCtx.lineWidth = underlineThickness;
+            alphaCtx.globalAlpha = values.eyebrow.opacity;
+            alphaCtx.beginPath();
+            alphaCtx.moveTo(dstX, eyeUlY);
+            alphaCtx.lineTo(dstX + eyeUlW, eyeUlY);
+            alphaCtx.stroke();
+          }
+
+          colorCtx.font = fontString;
+          const nameUlW = colorCtx.measureText(name).width;
+          const nameUlY = nameY + baseNameFontSize + underlineOffset;
+          colorCtx.strokeStyle = color;
+          colorCtx.lineWidth = underlineThickness;
+          colorCtx.globalAlpha = values.name.opacity;
+          colorCtx.beginPath();
+          colorCtx.moveTo(dstX, nameUlY);
+          colorCtx.lineTo(dstX + nameUlW, nameUlY);
+          colorCtx.stroke();
+
+          colorCtx.font = titleFontString;
+          const titleUlW = colorCtx.measureText(title).width;
+          const titleUlY = dstTitleY + baseTitleFontSize + underlineOffset;
+          colorCtx.lineWidth = underlineThickness;
+          colorCtx.globalAlpha = values.title.opacity;
+          colorCtx.beginPath();
+          colorCtx.moveTo(dstX, titleUlY);
+          colorCtx.lineTo(dstX + titleUlW, titleUlY);
+          colorCtx.stroke();
+
+          alphaCtx.strokeStyle = "#FFFFFF";
+          alphaCtx.font = fontString;
+          alphaCtx.lineWidth = underlineThickness;
+          alphaCtx.globalAlpha = values.name.opacity;
+          alphaCtx.beginPath();
+          alphaCtx.moveTo(dstX, nameUlY);
+          alphaCtx.lineTo(dstX + nameUlW, nameUlY);
+          alphaCtx.stroke();
+
+          alphaCtx.font = titleFontString;
+          alphaCtx.lineWidth = underlineThickness;
+          alphaCtx.globalAlpha = values.title.opacity;
+          alphaCtx.beginPath();
+          alphaCtx.moveTo(dstX, titleUlY);
+          alphaCtx.lineTo(dstX + titleUlW, titleUlY);
+          alphaCtx.stroke();
+
+          colorCtx.globalAlpha = 1;
+          alphaCtx.globalAlpha = 1;
+        }
       } else {
 
       // Render text (non-Meta path)
@@ -959,6 +1034,24 @@ export default function Edit() {
           
           alphaCtx.fillStyle = "#FFFFFF";
           alphaCtx.fillText(eyebrow, textDrawX, eyebrowYPos);
+
+          if (underline) {
+            const eyebrowUlW = colorCtx.measureText(eyebrow).width;
+            const eyebrowUlY = eyebrowYPos + scaledEyebrowFontSize + underlineOffset;
+            colorCtx.strokeStyle = color;
+            colorCtx.lineWidth = underlineThickness;
+            colorCtx.beginPath();
+            colorCtx.moveTo(textDrawX, eyebrowUlY);
+            colorCtx.lineTo(textDrawX + eyebrowUlW, eyebrowUlY);
+            colorCtx.stroke();
+
+            alphaCtx.strokeStyle = "#FFFFFF";
+            alphaCtx.lineWidth = underlineThickness;
+            alphaCtx.beginPath();
+            alphaCtx.moveTo(textDrawX, eyebrowUlY);
+            alphaCtx.lineTo(textDrawX + eyebrowUlW, eyebrowUlY);
+            alphaCtx.stroke();
+          }
         }
         
         colorCtx.restore();
@@ -999,16 +1092,15 @@ export default function Edit() {
       if (underline) {
         const nameWidth = colorCtx.measureText(name).width;
         colorCtx.strokeStyle = color;
-        colorCtx.lineWidth = Math.max(2, scaledNameFontSize / 24);
-        // Underline goes below the text (textBaseline='top' + font size + 2px gap).
-        const ulNameY = nameYPos + scaledNameFontSize + 2;
+        colorCtx.lineWidth = underlineThickness;
+        const ulNameY = nameYPos + scaledNameFontSize + underlineOffset;
         colorCtx.beginPath();
         colorCtx.moveTo(nameX, ulNameY);
         colorCtx.lineTo(nameX + nameWidth, ulNameY);
         colorCtx.stroke();
         
         alphaCtx.strokeStyle = "#FFFFFF";
-        alphaCtx.lineWidth = Math.max(2, scaledNameFontSize / 24);
+        alphaCtx.lineWidth = underlineThickness;
         alphaCtx.beginPath();
         alphaCtx.moveTo(nameX, ulNameY);
         alphaCtx.lineTo(nameX + nameWidth, ulNameY);
@@ -1051,16 +1143,16 @@ export default function Edit() {
       
       if (underline) {
         const titleWidth = colorCtx.measureText(title).width;
-        const ulTitleY = titleYPos + scaledTitleFontSize + 2;
+        const ulTitleY = titleYPos + scaledTitleFontSize + underlineOffset;
         colorCtx.strokeStyle = color;
-        colorCtx.lineWidth = Math.max(2, scaledTitleFontSize / 24);
+        colorCtx.lineWidth = underlineThickness;
         colorCtx.beginPath();
         colorCtx.moveTo(titleX, ulTitleY);
         colorCtx.lineTo(titleX + titleWidth, ulTitleY);
         colorCtx.stroke();
         
         alphaCtx.strokeStyle = "#FFFFFF";
-        alphaCtx.lineWidth = Math.max(2, scaledTitleFontSize / 24);
+        alphaCtx.lineWidth = underlineThickness;
         alphaCtx.beginPath();
         alphaCtx.moveTo(titleX, ulTitleY);
         alphaCtx.lineTo(titleX + titleWidth, ulTitleY);
@@ -1199,7 +1291,7 @@ export default function Edit() {
     return () => {
       gsap.ticker.remove(render);
     };
-  }, [eyebrow, name, title, font, fontSize, eyebrowFontSizePercent, titleFontSizePercent, fontWeight, bold, underline, italic, posX, posY, eyebrowGap, titleGap, color, showGrid, shadowEnabled, shadowBlur, shadowOffsetX, shadowOffsetY, shadowColor, shadowStrength, borderEnabled, borderWidth, borderColor, animationType, isPreviewPlaying, logoImageLoaded, logoPosition, previewBg]);
+  }, [eyebrow, name, title, font, fontSize, eyebrowFontSizePercent, titleFontSizePercent, fontWeight, bold, underline, underlineThickness, underlineOffset, italic, posX, posY, eyebrowGap, titleGap, color, showGrid, shadowEnabled, shadowBlur, shadowOffsetX, shadowOffsetY, shadowColor, shadowStrength, borderEnabled, borderWidth, borderColor, animationType, isPreviewPlaying, logoImageLoaded, logoPosition, previewBg]);
 
   // ─── Drag-to-position: guide drawing + mouse event handlers ───────────────
 
@@ -1469,6 +1561,8 @@ export default function Edit() {
       fontWeight,
       bold,
       underline,
+      underlineThickness,
+      underlineOffset,
       italic,
       posX,
       posY,
@@ -1532,6 +1626,8 @@ export default function Edit() {
     setTitleFontWeight((cue.config as any).titleFontWeight ?? undefined);
     setBold(cue.config.bold);
     setUnderline(cue.config.underline);
+    setUnderlineThickness((cue.config as any).underlineThickness ?? 2);
+    setUnderlineOffset((cue.config as any).underlineOffset ?? 2);
     setItalic(cue.config.italic);
     setPosX(cue.config.posX);
     setPosY(cue.config.posY);
@@ -1633,6 +1729,8 @@ export default function Edit() {
       fontWeight,
       bold,
       underline,
+      underlineThickness,
+      underlineOffset,
       italic,
       posX,
       posY,
@@ -1677,6 +1775,8 @@ export default function Edit() {
     setTitleFontWeight((preset.config as any).titleFontWeight ?? undefined);
     setBold(preset.config.bold);
     setUnderline(preset.config.underline);
+    setUnderlineThickness((preset.config as any).underlineThickness ?? 2);
+    setUnderlineOffset((preset.config as any).underlineOffset ?? 2);
     setItalic(preset.config.italic);
     setPosX(preset.config.posX);
     setPosY(preset.config.posY);
@@ -2076,6 +2176,32 @@ export default function Edit() {
                     <span className="text-xs">Underline</span>
                   </label>
                 </div>
+                {underline && (
+                  <div className="space-y-3 mt-2">
+                    <div>
+                      <Label className="text-xs text-gray-400">Line Thickness: {underlineThickness}px</Label>
+                      <Slider
+                        value={[underlineThickness]}
+                        onValueChange={([v]) => setUnderlineThickness(v)}
+                        min={1}
+                        max={10}
+                        step={1}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-400">Distance from Letters: {underlineOffset}px</Label>
+                      <Slider
+                        value={[underlineOffset]}
+                        onValueChange={([v]) => setUnderlineOffset(v)}
+                        min={0}
+                        max={20}
+                        step={1}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                )}
               </AccordionContent>
             </AccordionItem>
 
