@@ -167,10 +167,6 @@ export const UPDATE_OVERLAY_SCRIPT = `
     return d.innerHTML;
   }
 
-  function escAttr(s) {
-    return (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-  }
-
   function createVersionBadge(version) {
     var badge = document.getElementById('lt-version-badge');
     if (!badge) {

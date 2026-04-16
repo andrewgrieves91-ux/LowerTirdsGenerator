@@ -43,7 +43,7 @@ TROUBLESHOOTING
   Node.js installed via nvm may not be in the PATH used by .command files.
   Open Terminal and run:
     cd "/path/to/this/folder"
-    node dist/index.js
+    node server/index.js
   Then open http://localhost:3000 in your browser.
 
 FEATURES
@@ -52,6 +52,14 @@ FEATURES
 - Cues are saved in your browser's localStorage
 - Pop-out windows (Feed 1 / Filter 1) work the same as online
 - Companion HTTP API available at http://localhost:3000/api/companion
-- Export page (video rendering) works fully offline
 - No login required
+
+INTERNET REQUIREMENTS
+---------------------
+Most features run fully offline. Two exceptions:
+- Export page: on first use per session, downloads the FFmpeg core
+  (~32 MB) from cdn.jsdelivr.net. Once cached by the browser, subsequent
+  exports work offline until the cache is cleared.
+- "Check for Updates": contacts api.github.com to look for new releases.
+  Disable by skipping the menu item; the app works fine without it.
 
