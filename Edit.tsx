@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Save, Trash2, PlusCircle } from "lucide-react";
+import { Save, Trash2, PlusCircle, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "wouter";
 import gsap from "gsap";
@@ -1607,10 +1607,63 @@ export default function Edit() {
       };
       setCues(prevCues => [...prevCues, newCue]);
       toast.success("Cue saved!");
+      setCueName("");
+      setLoadedCueId(null);
+    }
+  };
+
+  const saveAsNewCue = () => {
+    if (!cueName.trim()) {
+      toast.error("Please enter a cue name");
+      return;
     }
 
-    setCueName("");
-    setLoadedCueId(null);
+    const cueConfig = {
+      eyebrow,
+      name,
+      title,
+      font,
+      fontSize,
+      eyebrowFontSizePercent,
+      titleFontSizePercent,
+      fontWeight,
+      bold,
+      underline,
+      underlineThickness,
+      underlineOffset,
+      italic,
+      posX,
+      posY,
+      eyebrowGap,
+      titleGap,
+      color,
+      animationType,
+      animationDuration,
+      dwellDuration,
+      shadowEnabled,
+      shadowBlur,
+      shadowOffsetX,
+      shadowOffsetY,
+      shadowColor,
+      shadowStrength,
+      borderEnabled,
+      borderWidth,
+      borderColor,
+      logoDataUrl: logoDataUrl ?? undefined,
+      logoPosition
+    };
+
+    const nextCueNumber = cues.length > 0 ? Math.max(...cues.map(c => c.cueNumber)) + 1 : 1;
+    const newCue: Cue = {
+      id: Date.now().toString(),
+      cueNumber: nextCueNumber,
+      name: cueName,
+      config: cueConfig
+    };
+    setCues(prevCues => [...prevCues, newCue]);
+    setLoadedCueId(newCue.id);
+    setHasUnsavedChanges(false);
+    toast.success("Saved as new cue!");
   };
 
   const loadCue = (cue: Cue) => {
@@ -2662,6 +2715,16 @@ export default function Edit() {
             </Button>
             {hasUnsavedChanges && (
               <p className="text-xs text-yellow-500">⚠ Unsaved changes</p>
+            )}
+            {loadedCueId && (
+              <Button
+                onClick={saveAsNewCue}
+                variant="outline"
+                className="w-full border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 hover:text-cyan-300 font-bold"
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Save as New Cue
+              </Button>
             )}
             <Button
               onClick={handleNewCue}
