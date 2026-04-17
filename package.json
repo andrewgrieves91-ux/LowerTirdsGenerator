@@ -1,6 +1,6 @@
 {
   "name": "lower-thirds-generator-offline",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "Lower Thirds Generator — offline desktop app",
   "type": "module",
   "main": "electron/main.cjs",

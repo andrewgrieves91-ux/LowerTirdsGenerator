@@ -173,20 +173,53 @@ async function applyUpdate(downloadUrl, newVersion) {
       throw new Error("Update ZIP is missing dist/public or server directories");
     }
 
-    const targetPublic = path.join(appPath, "dist", "public");
-    const targetServer = path.join(appPath, "server");
-
     console.log("[Updater] Replacing files...");
+
+    // Replace dist/public
+    const targetPublic = path.join(appPath, "dist", "public");
     rmSync(targetPublic);
     fs.cpSync(newPublic, targetPublic, { recursive: true });
 
+    // Replace server/
+    const targetServer = path.join(appPath, "server");
     rmSync(targetServer);
     fs.cpSync(newServer, targetServer, { recursive: true });
 
-    const pkgPath = path.join(appPath, "package.json");
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
-    pkg.version = newVersion;
-    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
+    // Replace electron/ (main.cjs, preload.cjs, updater.js, ndiSender.cjs, native/)
+    const newElectron = path.join(tmpDir, "electron");
+    if (fs.existsSync(newElectron)) {
+      const targetElectron = path.join(appPath, "electron");
+      // Copy individual files/folders instead of wiping the whole directory,
+      // since updater.js itself is currently running from there.
+      const entries = fs.readdirSync(newElectron);
+      for (const entry of entries) {
+        const src = path.join(newElectron, entry);
+        const dest = path.join(targetElectron, entry);
+        try {
+          if (fs.statSync(src).isDirectory()) {
+            rmSync(dest);
+            fs.cpSync(src, dest, { recursive: true });
+          } else {
+            fs.copyFileSync(src, dest);
+          }
+        } catch (err) {
+          console.warn(`[Updater] Could not replace electron/${entry}: ${err.message}`);
+        }
+      }
+      console.log("[Updater] Replaced electron/ files");
+    }
+
+    // Replace package.json if present in update (for new dependencies, scripts, build config)
+    const newPkgPath = path.join(tmpDir, "package.json");
+    const targetPkgPath = path.join(appPath, "package.json");
+    if (fs.existsSync(newPkgPath)) {
+      fs.copyFileSync(newPkgPath, targetPkgPath);
+      console.log("[Updater] Replaced package.json");
+    } else {
+      const pkg = JSON.parse(fs.readFileSync(targetPkgPath, "utf-8"));
+      pkg.version = newVersion;
+      fs.writeFileSync(targetPkgPath, JSON.stringify(pkg, null, 2) + "\n");
+    }
 
     console.log("[Updater] Cleaning up...");
     try { fs.unlinkSync(zipPath); } catch {}

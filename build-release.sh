@@ -37,7 +37,7 @@ mkdir -p "${RELEASES_DIR}"
 # ── 1. Update package (delta: dist/public + server) ──────────────────────────
 
 echo "==> Building update package..."
-mkdir -p "${STAGING_DIR}/update/dist" "${STAGING_DIR}/update/server"
+mkdir -p "${STAGING_DIR}/update/dist" "${STAGING_DIR}/update/server" "${STAGING_DIR}/update/electron"
 
 cp -r "${SCRIPT_DIR}/dist/public" "${STAGING_DIR}/update/dist/"
 
@@ -48,8 +48,14 @@ for subdir in middleware routes state; do
   fi
 done
 
+if [ -d "${SCRIPT_DIR}/electron" ]; then
+  cp -r "${SCRIPT_DIR}/electron/." "${STAGING_DIR}/update/electron/"
+fi
+
+cp "${SCRIPT_DIR}/package.json" "${STAGING_DIR}/update/package.json"
+
 cd "${STAGING_DIR}/update"
-zip -r "${RELEASES_DIR}/${UPDATE_ZIP}" dist/ server/ -x '*.DS_Store'
+zip -r "${RELEASES_DIR}/${UPDATE_ZIP}" dist/ server/ electron/ package.json -x '*.DS_Store'
 cd "${SCRIPT_DIR}"
 
 # ── 2. Electron app + DMG ────────────────────────────────────────────────────
