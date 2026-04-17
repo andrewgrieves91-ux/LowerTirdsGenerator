@@ -29,6 +29,10 @@ async function readLocalVersion() {
   return { version: pkg.version, updateUrl: pkg.updateUrl };
 }
 
+export async function getLocalVersion() {
+  return readLocalVersion();
+}
+
 function compareVersions(a, b) {
   const pa = a.split(".").map(Number);
   const pb = b.split(".").map(Number);
