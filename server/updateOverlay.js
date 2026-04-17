@@ -179,7 +179,7 @@ export const UPDATE_OVERLAY_SCRIPT = `
       badge.id = 'lt-version-badge';
       document.body.appendChild(badge);
     }
-    badge.textContent = 'v' + version;
+    badge.textContent = 'Beta v' + version;
   }
 
   var _etagCacheKey = 'lt_update_etag';
@@ -410,7 +410,7 @@ export const UPDATE_OVERLAY_SCRIPT = `
     if (!betaEl) return;
 
     var version = window.__LT_VERSION || '';
-    betaEl.textContent = version ? 'v' + version : '';
+    betaEl.textContent = version ? 'Beta v' + version : 'Beta';
 
     var logo = document.createElement('img');
     logo.id = 'lt-home-logo';

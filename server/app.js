@@ -18,9 +18,13 @@ let cachedIndexHtml = null;
 function getIndexHtml(staticPath) {
   if (cachedIndexHtml) return cachedIndexHtml;
 
+  const pkgPath = path.resolve(__dirname, "..", "package.json");
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+
   const raw = fs.readFileSync(path.join(staticPath, "index.html"), "utf-8");
-  const scriptTag = `<script id="lt-update-overlay">${UPDATE_OVERLAY_SCRIPT}</script>`;
-  cachedIndexHtml = raw.replace("</body>", `${scriptTag}\n</body>`);
+  const globals = `<script>window.__LT_VERSION=${JSON.stringify(pkg.version)};window.__LT_UPDATE_URL=${JSON.stringify(pkg.updateUrl || "")};</script>`;
+  const overlay = `<script id="lt-update-overlay">${UPDATE_OVERLAY_SCRIPT}</script>`;
+  cachedIndexHtml = raw.replace("</body>", `${globals}\n${overlay}\n</body>`);
   return cachedIndexHtml;
 }
 
