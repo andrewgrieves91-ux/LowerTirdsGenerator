@@ -3,6 +3,11 @@ const { createServer } = require("http");
 const path = require("path");
 const { checkForUpdates } = require("./updater.js");
 
+app.commandLine.appendSwitch("enable-gpu-rasterization");
+app.commandLine.appendSwitch("enable-zero-copy");
+app.commandLine.appendSwitch("ignore-gpu-blocklist");
+app.commandLine.appendSwitch("enable-features", "CanvasOopRasterization");
+
 let mainWindow;
 let httpServer;
 let serverPort;
@@ -51,6 +56,7 @@ app.whenReady().then(async () => {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, "preload.cjs"),
+      backgroundThrottling: false,
     },
   });
 
@@ -58,7 +64,17 @@ app.whenReady().then(async () => {
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith("http://localhost") || url.startsWith("file://")) {
-      return { action: "allow" };
+      return {
+        action: "allow",
+        overrideBrowserWindowOptions: {
+          webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, "preload.cjs"),
+            backgroundThrottling: false,
+          },
+        },
+      };
     }
     shell.openExternal(url);
     return { action: "deny" };

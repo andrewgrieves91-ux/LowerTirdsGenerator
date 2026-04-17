@@ -105,6 +105,11 @@ export const UPDATE_OVERLAY_SCRIPT = `
       '#lt-hub-link:hover {',
       '  background: rgba(34,211,238,0.18); border-color: rgba(34,211,238,0.5);',
       '}',
+      'canvas {',
+      '  transform: translateZ(0);',
+      '  backface-visibility: hidden;',
+      '  will-change: contents;',
+      '}',
     ].join('\\n');
     document.head.appendChild(style);
   }
@@ -596,8 +601,27 @@ export const UPDATE_OVERLAY_SCRIPT = `
     scheduleApply();
   }
 
+  function warmupFonts() {
+    if (!document.fonts || !document.fonts.ready) return;
+    document.fonts.ready.then(function() {
+      try {
+        var c = document.createElement('canvas');
+        c.width = 1; c.height = 1;
+        var ctx = c.getContext('2d');
+        var sizes = [18, 24, 32, 48, 64, 96, 128];
+        document.fonts.forEach(function(f) {
+          for (var i = 0; i < sizes.length; i++) {
+            ctx.font = sizes[i] + 'px "' + f.family + '"';
+            ctx.fillText('AaGgQq0123', 0, sizes[i]);
+          }
+        });
+      } catch (e) {}
+    });
+  }
+
   function init() {
     createStyles();
+    warmupFonts();
     setFavicon();
     watchForSettings();
     watchForPageChanges();
