@@ -1,0 +1,1 @@
+cmd_Release/ndi_sender.node := c++ -bundle -undefined dynamic_lookup -Wl,-search_paths_first -mmacosx-version-min=11.0 -arch arm64 -L./Release -stdlib=libc++  -o Release/ndi_sender.node Release/obj.target/ndi_sender/src/sender.o -Llib/macOS -lndi -Wl,-rpath,@loader_path

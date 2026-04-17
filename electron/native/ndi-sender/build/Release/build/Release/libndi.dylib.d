@@ -1,0 +1,1 @@
+cmd_../build/Release/libndi.dylib := ln -f "../lib/macOS/libndi.dylib" "../build/Release/libndi.dylib" 2>/dev/null || (rm -rf "../build/Release/libndi.dylib" && cp -af "../lib/macOS/libndi.dylib" "../build/Release/libndi.dylib")
