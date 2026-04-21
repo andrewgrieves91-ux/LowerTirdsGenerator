@@ -56,9 +56,11 @@ function main() {
   const src = fs.readFileSync(BUNDLE, "utf8");
 
   const oldOccurrences = src.split(OLD).length - 1;
-  const newOccurrences = src.split(NEW).length - 1;
 
-  if (oldOccurrences === 0 && newOccurrences >= 1) {
+  // Anything with `:0` as the shadow-off fallback is considered applied —
+  // this covers both the original form and any form superseded by a later
+  // patch (e.g. `Math.max(1, Math.ceil(...)):0`).
+  if (oldOccurrences === 0 && /shadowBlur\?\?10\)\/10\)\):0/.test(src)) {
     console.log("[patch-render-shadow-dedup] already applied — nothing to do.");
     return;
   }

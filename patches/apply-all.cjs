@@ -21,6 +21,8 @@ const PATCHES = [
   "patch-countdown-throttle.cjs",
   "patch-underline-scale.cjs",
   "patch-underline-logo-offset.cjs",
+  "patch-shadow-zero-blur-and-underline.cjs",
+  "patch-border-scale.cjs",
 ];
 
 let ok = true;
