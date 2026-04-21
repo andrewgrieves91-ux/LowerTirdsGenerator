@@ -19,6 +19,7 @@ const PATCHES = [
   "patch-render-idle-skip.cjs",
   "patch-render-shadow-dedup.cjs",
   "patch-countdown-throttle.cjs",
+  "patch-underline-scale.cjs",
 ];
 
 let ok = true;
