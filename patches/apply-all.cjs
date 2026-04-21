@@ -20,6 +20,7 @@ const PATCHES = [
   "patch-render-shadow-dedup.cjs",
   "patch-countdown-throttle.cjs",
   "patch-underline-scale.cjs",
+  "patch-underline-logo-offset.cjs",
 ];
 
 let ok = true;
