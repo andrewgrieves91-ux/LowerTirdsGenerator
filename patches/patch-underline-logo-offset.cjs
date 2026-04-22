@@ -83,7 +83,10 @@ function main() {
 
   const src = fs.readFileSync(BUNDLE, "utf8");
 
-  if (src.includes(APPLIED_MARKER)) {
+  // Either the original applied-marker or the newer corrected formula
+  // (installed by patch-underline-logo-offset-correct) means we're done.
+  const CORRECTED_MARKER = "var _euX=Oe+(H.eyebrowLogoOffset||0)*G;";
+  if (src.includes(APPLIED_MARKER) || src.includes(CORRECTED_MARKER)) {
     console.log("[patch-underline-logo-offset] already applied — nothing to do.");
     return;
   }

@@ -23,6 +23,10 @@ const PATCHES = [
   "patch-underline-logo-offset.cjs",
   "patch-shadow-zero-blur-and-underline.cjs",
   "patch-border-scale.cjs",
+  "patch-border-scale-edit-export.cjs",
+  "patch-shadow-zero-blur-edit-export.cjs",
+  "patch-meta-underline-shadow-scale-edit-export.cjs",
+  "patch-underline-logo-offset-correct.cjs",
 ];
 
 let ok = true;
