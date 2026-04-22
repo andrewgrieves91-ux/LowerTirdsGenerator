@@ -21,8 +21,11 @@ const fs = require("node:fs");
 const path = require("node:path");
 const BUNDLE = path.resolve(__dirname,"..","dist","public","assets","index-iitzneuS.js");
 
-const OLD = 'await Pt.exec(at);';
-const NEW = 'if(Pt._ltgCurProgressCb){try{Pt.off("progress",Pt._ltgCurProgressCb)}catch(_){}}Pt._ltgCurProgressCb=({progress:_pg})=>{if(typeof _pg==="number"&&_pg>=0&&_pg<=1){try{z(Ce.id,{progress:55+Math.round(_pg*35)})}catch(_){}}};try{Pt.on("progress",Pt._ltgCurProgressCb)}catch(_){}await Pt.exec(at);';
+// The preceding minified code ends in a comma expression (`...at=[...],await Pt.exec(at);`),
+// so we MUST begin the replacement with a semicolon to terminate that expression before
+// introducing a new `if` statement — otherwise we end up with invalid `,if(` syntax.
+const OLD = ',await Pt.exec(at);';
+const NEW = ';if(Pt._ltgCurProgressCb){try{Pt.off("progress",Pt._ltgCurProgressCb)}catch(_){}}Pt._ltgCurProgressCb=({progress:_pg})=>{if(typeof _pg==="number"&&_pg>=0&&_pg<=1){try{z(Ce.id,{progress:55+Math.round(_pg*35)})}catch(_){}}};try{Pt.on("progress",Pt._ltgCurProgressCb)}catch(_){}await Pt.exec(at);';
 const MARKER = '_ltgCurProgressCb';
 
 function main() {
