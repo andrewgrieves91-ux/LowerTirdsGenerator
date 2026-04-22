@@ -1,0 +1,7 @@
+# Binaries + their license notices are downloaded at build time by
+# build/download-ffmpeg.sh and packaged into the .app. Never commit them.
+ffmpeg
+ffmpeg-LICENSE.txt
+
+# Allow this .gitignore itself to be tracked so the empty dir exists.
+!.gitignore

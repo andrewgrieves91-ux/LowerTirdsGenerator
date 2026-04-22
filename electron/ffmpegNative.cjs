@@ -28,7 +28,14 @@ let _detectCache = undefined;
 
 function detectFFmpeg() {
   if (_detectCache !== undefined) return _detectCache;
+  // Bundled binary shipped inside the .app (downloaded at build time via
+  // build/download-ffmpeg.sh). `__dirname` resolves to electron/ in both
+  // development and production because build.asar is false. This is always
+  // the preferred location — guarantees consistent ffmpeg version across
+  // every machine that runs the app, no matter what the user has in PATH.
+  const BUNDLED = path.join(__dirname, "bin", "ffmpeg");
   const tryPaths = [
+    BUNDLED,
     "/opt/homebrew/bin/ffmpeg",
     "/usr/local/bin/ffmpeg",
     "/usr/bin/ffmpeg",
@@ -36,7 +43,17 @@ function detectFFmpeg() {
     "C:\\ffmpeg\\bin\\ffmpeg.exe",
   ];
   for (const p of tryPaths) {
-    try { if (fs.existsSync(p)) { _detectCache = p; return p; } } catch (_) {}
+    try {
+      if (!fs.existsSync(p)) continue;
+      // Ensure the bundled binary is executable. electron-builder normally
+      // preserves mode bits, but a fresh clone on Windows/exotic filesystems
+      // can lose the +x. Cheap and safe — runs once per process.
+      if (p === BUNDLED) {
+        try { fs.chmodSync(p, 0o755); } catch (_) {}
+      }
+      _detectCache = p;
+      return p;
+    } catch (_) {}
   }
   try {
     const cmd = process.platform === "win32" ? "where ffmpeg" : "which ffmpeg";

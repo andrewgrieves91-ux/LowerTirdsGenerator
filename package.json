@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node server/index.js",
     "electron": "unset ELECTRON_RUN_AS_NODE && electron .",
-    "build:mac": "electron-builder --mac --publish never",
+    "build:mac": "bash build/download-ffmpeg.sh && electron-builder --mac --publish never",
     "build:dmg": "bash build/create-dmg.sh",
     "ndi:build": "cd electron/native/ndi-sender && npx node-gyp rebuild",
     "ndi:rebuild-electron": "electron-rebuild -f -m electron/native/ndi-sender",
