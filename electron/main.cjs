@@ -3,6 +3,7 @@ const { createServer } = require("http");
 const path = require("path");
 const { checkForUpdates } = require("./updater.js");
 const ndi = require("./ndiSender.cjs");
+const ffmpegNative = require("./ffmpegNative.cjs");
 
 app.commandLine.appendSwitch("enable-gpu-rasterization");
 app.commandLine.appendSwitch("enable-zero-copy");
@@ -192,6 +193,35 @@ app.whenReady().then(async () => {
     ndi.saveEnabled(false);
     rebuildMenu();
     return true;
+  });
+
+  // ─── Native ffmpeg (Export page) — Tier C1 ───
+  ipcMain.handle("ffmpeg:detect", () => {
+    return ffmpegNative.detectFFmpeg() ? true : false;
+  });
+  ipcMain.handle("ffmpeg:init", (_e, sessionId) => {
+    try { return { ok: true, ...ffmpegNative.initSession(sessionId) }; }
+    catch (err) { return { ok: false, error: String(err?.message || err) }; }
+  });
+  ipcMain.handle("ffmpeg:writeFrame", (_e, sessionId, index, buf) => {
+    try { ffmpegNative.writeFrame(sessionId, index, buf); return { ok: true }; }
+    catch (err) { return { ok: false, error: String(err?.message || err) }; }
+  });
+  ipcMain.handle("ffmpeg:run", async (_e, sessionId, args, outName) => {
+    const progressChannel = `ffmpeg:progress:${sessionId}`;
+    try {
+      const buf = await ffmpegNative.runFFmpeg(sessionId, args, outName, (sec) => {
+        try { mainWindow?.webContents?.send(progressChannel, sec); } catch (_) {}
+      });
+      // Transfer as ArrayBuffer-backed Uint8Array for renderer
+      return { ok: true, buffer: buf };
+    } catch (err) {
+      return { ok: false, error: String(err?.message || err) };
+    }
+  });
+  ipcMain.handle("ffmpeg:cleanup", (_e, sessionId) => {
+    try { ffmpegNative.cleanup(sessionId); return { ok: true }; }
+    catch (err) { return { ok: false, error: String(err?.message || err) }; }
   });
 
   if (ndi.isAvailable() && ndi.loadEnabled()) {

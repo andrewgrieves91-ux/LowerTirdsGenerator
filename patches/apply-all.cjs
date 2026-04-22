@@ -27,6 +27,18 @@ const PATCHES = [
   "patch-shadow-zero-blur-edit-export.cjs",
   "patch-meta-underline-shadow-scale-edit-export.cjs",
   "patch-underline-logo-offset-correct.cjs",
+  // Export pipeline (tiers A1-B3)
+  "patch-export-ffmpeg-cache.cjs",
+  "patch-export-stream-frames.cjs",
+  "patch-export-mp4-quality.cjs",
+  "patch-export-framerate-config.cjs",
+  "patch-export-single-png-seek.cjs",
+  "patch-export-ffmpeg-progress.cjs",
+  // Tier C1 + C2 — order matters: native-ffmpeg must land before
+  // webcodecs-mp4 because the latter's anchor is the former's code.
+  "patch-export-native-ffmpeg.cjs",
+  "patch-export-webcodecs-mp4.cjs",
+  "patch-export-inject-webcodecs-script.cjs",
 ];
 
 let ok = true;
