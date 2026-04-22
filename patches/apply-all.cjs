@@ -39,6 +39,10 @@ const PATCHES = [
   "patch-export-native-ffmpeg.cjs",
   "patch-export-webcodecs-mp4.cjs",
   "patch-export-inject-webcodecs-script.cjs",
+  // MOV alpha Premiere 2026 compatibility (ordered: args change first so
+  // the byte-patching removal can rely on correct muxer output).
+  "patch-export-mov-alpha-args.cjs",
+  "patch-export-remove-depth-hack.cjs",
 ];
 
 let ok = true;
