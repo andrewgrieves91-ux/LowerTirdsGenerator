@@ -54,6 +54,11 @@ cd "${SCRIPT_DIR}"
 
 # ── 2. Electron app + DMG ────────────────────────────────────────────────────
 
+echo "==> Ensuring bundled ffmpeg binary is present..."
+if [ -x "${SCRIPT_DIR}/build/download-ffmpeg.sh" ]; then
+  bash "${SCRIPT_DIR}/build/download-ffmpeg.sh"
+fi
+
 echo "==> Building Electron app (.app bundle)..."
 npx electron-builder --mac --publish never
 
