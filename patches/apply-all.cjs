@@ -43,6 +43,11 @@ const PATCHES = [
   // the byte-patching removal can rely on correct muxer output).
   "patch-export-mov-alpha-args.cjs",
   "patch-export-remove-depth-hack.cjs",
+  // Restores the vendor swap (FFMP -> appl) that remove-depth-hack
+  // incorrectly deleted. The depth flip stays gone; only the vendor
+  // swap is brought back. Premiere 2026 needs the container vendor
+  // field patched.
+  "patch-export-restore-vendor-swap.cjs",
 ];
 
 let ok = true;
