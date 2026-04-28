@@ -48,6 +48,19 @@ const PATCHES = [
   // swap is brought back. Premiere 2026 needs the container vendor
   // field patched.
   "patch-export-restore-vendor-swap.cjs",
+  // Color regression fix in Tc Meta path (alphaCanvas -> colorCanvas)
+  // + logo white-tint removal + byte-patch the NATIVE ffmpeg output
+  // buffer (the WASM byte-patch never ran on the Tier C1 path, so
+  // native exports came out with FFMP vendor and zero icpf alpha
+  // flags). Must come last in the export sequence; it depends on
+  // the native-ffmpeg branch and the WASM byte-patch already being
+  // in place to keep the constants compatible.
+  "patch-export-alpha-color-and-native-bytepatch.cjs",
+  // Right-edge text clipping (italic glyphs spilling past advance
+  // width into a too-tight canvas region) + underline shadow drawn
+  // OVER the text in Tc Meta path (z-order: hoist the underline
+  // strokes to before the text shadow loop + visible passes).
+  "patch-export-text-rightclip-and-underline-zorder.cjs",
 ];
 
 let ok = true;
