@@ -53,6 +53,11 @@ const RLE_NEW = '/* qt-rle metadata now set via ffmpeg -vendor appl + -tag:v "rl
 
 const MARKER_PRO = 'patch found 0 icpf frame headers';
 const MARKER_RLE = 'metadata now set via ffmpeg';
+// `patch-export-restore-vendor-swap` overwrites our QT-RLE comment with new
+// swap code. If that ran already, the original RLE_OLD bytes are gone and
+// our MARKER_RLE comment is also gone. Detect that final state so this
+// patch is a no-op there.
+const MARKER_RLE_RESTORED = 'if(ze[et]===70&&ze[et+1]===70&&ze[et+2]===77&&ze[et+3]===80){ze[et]=97;ze[et+1]=112;ze[et+2]=112;ze[et+3]=108}';
 
 function main() {
   if (!fs.existsSync(BUNDLE)) { console.error(`bundle not found: ${BUNDLE}`); process.exit(1); }
@@ -69,8 +74,8 @@ function main() {
     didPro = true;
   }
 
-  if (src.includes(MARKER_RLE)) {
-    console.log("[patch-export-remove-depth-hack] QT RLE branch: already applied");
+  if (src.includes(MARKER_RLE) || src.includes(MARKER_RLE_RESTORED)) {
+    console.log("[patch-export-remove-depth-hack] QT RLE branch: already applied (or vendor-swap restored on top)");
   } else {
     const n = src.split(RLE_OLD).length - 1;
     if (n !== 1) { console.error(`[patch-export-remove-depth-hack] QT RLE target not found (matches=${n})`); process.exit(1); }
