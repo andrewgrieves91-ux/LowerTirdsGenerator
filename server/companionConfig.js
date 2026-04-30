@@ -343,7 +343,10 @@ export function generateCompanionConfig(cues, baseUrl, gridLayout, gridSizeData)
   };
 }
 
-export function generateButtonLayout(cues, baseUrl, gridLayout, gridSizeData) {
+// Note: signature mirrors generateCompanionConfig for caller symmetry, but
+// gridSize is unused here (button layout doesn't pad to grid bounds the way
+// the full config object does). Prefix marks it as intentionally ignored.
+export function generateButtonLayout(cues, baseUrl, gridLayout, _gridSizeData) {
   const ANY_LIVE_VAR = "lt_any_live";
   const buttons = [];
 

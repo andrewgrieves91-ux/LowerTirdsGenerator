@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getLocalVersion } from "../updater.js";
+import { getLocalVersion } from "../lib/version.cjs";
 
 const router = Router();
 

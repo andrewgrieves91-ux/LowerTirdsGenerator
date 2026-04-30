@@ -15,3 +15,8 @@ releases/*.dmg
 .lt-companion-grid-layout.json
 .lt-companion-grid-size.json
 .archive/
+# Personal recordings / screen captures should not live in the repo.
+*.mov
+# Vitest snapshot updates are in tests/__snapshots__ and should be tracked,
+# but Vitest itself caches state under tests/.vitest-cache.
+tests/.vitest-cache/

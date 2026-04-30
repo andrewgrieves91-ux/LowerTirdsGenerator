@@ -115,4 +115,19 @@ export function setGridSize(size) {
   try { fs.writeFileSync(GRID_SIZE_FILE, JSON.stringify(size)); } catch { /* best-effort */ }
 }
 
+/**
+ * Reset all in-memory state to its default. Intended for tests. Does NOT
+ * touch the on-disk persistence files.
+ */
+export function resetState() {
+  state.pendingCommand = null;
+  state.commandAt = 0;
+  state.tally = [];
+  state.commandSeq = 0;
+  state.cues = [];
+  state.companionApiUrl = "http://localhost:8000";
+  state.gridLayout = null;
+  state.gridSize = null;
+}
+
 export default state;

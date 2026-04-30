@@ -1,0 +1,3098 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`companionConfig > snapshot (deterministic with mocked uid) > matches the canonical custom-grid output 1`] = `
+{
+  "companionBuild": "lower-thirds-generator-export",
+  "connectionCollections": [],
+  "customVariablesCollections": [],
+  "custom_variables": {
+    "lt_any_live": {
+      "defaultValue": "false",
+      "description": "true when any cue is currently live or animating",
+      "persistCurrentValue": false,
+      "sortOrder": 1,
+    },
+    "lt_raw_tally": {
+      "defaultValue": "{"tally":[]}",
+      "description": "Raw JSON tally response from the Lower Thirds app",
+      "persistCurrentValue": false,
+      "sortOrder": 0,
+    },
+    "lt_tally_1": {
+      "defaultValue": "off",
+      "description": "Tally state for cue 1 (First Cue)",
+      "persistCurrentValue": false,
+      "sortOrder": 2,
+    },
+    "lt_tally_2": {
+      "defaultValue": "off",
+      "description": "Tally state for cue 2 (Second Cue with a Long Long Name That Exceeds Twenty Chars)",
+      "persistCurrentValue": false,
+      "sortOrder": 3,
+    },
+    "lt_tally_3": {
+      "defaultValue": "off",
+      "description": "Tally state for cue 3 (Third)",
+      "persistCurrentValue": false,
+      "sortOrder": 4,
+    },
+  },
+  "expressionVariables": {},
+  "expressionVariablesCollections": [],
+  "instances": {
+    "generic_http_1": {
+      "config": {
+        "base_url": "http://localhost:3000",
+      },
+      "enabled": true,
+      "instance_type": "generic-http",
+      "isFirstInit": false,
+      "label": "Lower_Thirds_HTTP",
+      "lastUpgradeIndex": 1,
+      "moduleInstanceType": "connection",
+      "moduleVersionId": "2.7.0",
+      "secrets": {},
+      "sortOrder": 0,
+    },
+  },
+  "pages": {
+    "1": {
+      "controls": {
+        "0": {
+          "0": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_1",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_1",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_1",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/1",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1118481,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "1
+First Cue",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "1": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "true",
+                  "variable": "custom:lt_any_live",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/play",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 43724,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "▶ PLAY",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+        },
+        "1": {
+          "0": {
+            "feedbacks": [],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/reset",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 5592405,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "■ RESET",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "1": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_2",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_2",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_2",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/2",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1118481,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "2
+Second Cue with a Lo",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+        },
+      },
+      "gridSize": {
+        "maxColumn": 1,
+        "maxRow": 1,
+        "minColumn": 0,
+        "minRow": 0,
+      },
+      "id": "irs",
+      "name": "Cues",
+    },
+  },
+  "surfaceGroups": {},
+  "surfaces": {},
+  "triggerCollections": [],
+  "triggers": {
+    "lower_thirds_tally_extract": {
+      "actions": [
+        {
+          "connectionId": "internal",
+          "definitionId": "custom_variable_set_expression",
+          "id": "irs",
+          "options": {
+            "expression": "jsonpath($(custom:lt_raw_tally), "$.anyLive") ?? "false"",
+            "name": "lt_any_live",
+          },
+          "type": "action",
+          "upgradeIndex": null,
+        },
+        {
+          "connectionId": "internal",
+          "definitionId": "custom_variable_set_expression",
+          "id": "irs",
+          "options": {
+            "expression": "jsonpath($(custom:lt_raw_tally), "$.tallyByNumber.1") ?? "off"",
+            "name": "lt_tally_1",
+          },
+          "type": "action",
+          "upgradeIndex": null,
+        },
+        {
+          "connectionId": "internal",
+          "definitionId": "custom_variable_set_expression",
+          "id": "irs",
+          "options": {
+            "expression": "jsonpath($(custom:lt_raw_tally), "$.tallyByNumber.2") ?? "off"",
+            "name": "lt_tally_2",
+          },
+          "type": "action",
+          "upgradeIndex": null,
+        },
+        {
+          "connectionId": "internal",
+          "definitionId": "custom_variable_set_expression",
+          "id": "irs",
+          "options": {
+            "expression": "jsonpath($(custom:lt_raw_tally), "$.tallyByNumber.3") ?? "off"",
+            "name": "lt_tally_3",
+          },
+          "type": "action",
+          "upgradeIndex": null,
+        },
+      ],
+      "condition": [],
+      "events": [
+        {
+          "enabled": true,
+          "id": "irs",
+          "options": {
+            "variableId": "custom:lt_raw_tally",
+          },
+          "type": "variable_changed",
+        },
+      ],
+      "localVariables": [],
+      "options": {
+        "enabled": true,
+        "name": "Lower Thirds Tally Extract",
+        "sortOrder": 1,
+      },
+      "type": "trigger",
+    },
+    "lower_thirds_tally_poll": {
+      "actions": [
+        {
+          "connectionId": "generic_http_1",
+          "definitionId": "get",
+          "id": "irs",
+          "options": {
+            "header": "",
+            "jsonResultDataVariable": "lt_raw_tally",
+            "result_stringify": false,
+            "statusCodeVariable": "",
+            "url": "http://localhost:3000/api/companion/tally",
+          },
+          "type": "action",
+          "upgradeIndex": 1,
+        },
+      ],
+      "condition": [],
+      "events": [
+        {
+          "enabled": true,
+          "id": "irs",
+          "options": {
+            "seconds": 1,
+          },
+          "type": "interval",
+        },
+      ],
+      "localVariables": [],
+      "options": {
+        "enabled": true,
+        "name": "Lower Thirds Tally Poll",
+        "sortOrder": 0,
+      },
+      "type": "trigger",
+    },
+  },
+  "type": "full",
+  "version": 9,
+}
+`;
+
+exports[`companionConfig > snapshot (deterministic with mocked uid) > matches the canonical default-layout output for a small cue set 1`] = `
+{
+  "companionBuild": "lower-thirds-generator-export",
+  "connectionCollections": [],
+  "customVariablesCollections": [],
+  "custom_variables": {
+    "lt_any_live": {
+      "defaultValue": "false",
+      "description": "true when any cue is currently live or animating",
+      "persistCurrentValue": false,
+      "sortOrder": 1,
+    },
+    "lt_raw_tally": {
+      "defaultValue": "{"tally":[]}",
+      "description": "Raw JSON tally response from the Lower Thirds app",
+      "persistCurrentValue": false,
+      "sortOrder": 0,
+    },
+    "lt_tally_1": {
+      "defaultValue": "off",
+      "description": "Tally state for cue 1 (First Cue)",
+      "persistCurrentValue": false,
+      "sortOrder": 2,
+    },
+    "lt_tally_2": {
+      "defaultValue": "off",
+      "description": "Tally state for cue 2 (Second Cue with a Long Long Name That Exceeds Twenty Chars)",
+      "persistCurrentValue": false,
+      "sortOrder": 3,
+    },
+  },
+  "expressionVariables": {},
+  "expressionVariablesCollections": [],
+  "instances": {
+    "generic_http_1": {
+      "config": {
+        "base_url": "http://localhost:3000",
+      },
+      "enabled": true,
+      "instance_type": "generic-http",
+      "isFirstInit": false,
+      "label": "Lower_Thirds_HTTP",
+      "lastUpgradeIndex": 1,
+      "moduleInstanceType": "connection",
+      "moduleVersionId": "2.7.0",
+      "secrets": {},
+      "sortOrder": 0,
+    },
+  },
+  "pages": {
+    "1": {
+      "controls": {
+        "0": {
+          "0": {
+            "options": {},
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 3355443,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "PAGE
+UP",
+              "textExpression": false,
+            },
+            "type": "pageup",
+          },
+          "1": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_1",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_1",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_1",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/1",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1118481,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "1
+First Cue",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "2": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_2",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_2",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_2",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/2",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1118481,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "2
+Second Cue with a Lo",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "3": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_3",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_3",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_3",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/3",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1710618,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "4": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_4",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_4",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_4",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/4",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1710618,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "5": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_5",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_5",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_5",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/5",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1710618,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "6": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_6",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_6",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_6",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/6",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1710618,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "7": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_7",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_7",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_7",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/7",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1710618,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+        },
+        "1": {
+          "0": {
+            "options": {},
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 3355443,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "HOME",
+              "textExpression": false,
+            },
+            "type": "pagenum",
+          },
+          "1": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_8",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_8",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_8",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/8",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1710618,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "2": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_9",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_9",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_9",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/9",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1710618,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "3": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_10",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_10",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_10",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/10",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1710618,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "4": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_11",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_11",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_11",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/11",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1710618,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "5": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_12",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_12",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_12",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/12",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1710618,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "6": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_13",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_13",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_13",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/13",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1710618,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "7": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_14",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_14",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_14",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/14",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1710618,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+        },
+        "2": {
+          "0": {
+            "options": {},
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 3355443,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "PAGE
+DN",
+              "textExpression": false,
+            },
+            "type": "pagedown",
+          },
+          "1": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_15",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_15",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_15",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/15",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1710618,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "2": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_16",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_16",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_16",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/16",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1710618,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "3": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_17",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_17",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_17",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/17",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1710618,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "4": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_18",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_18",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_18",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/18",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1710618,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "5": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_19",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_19",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_19",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/19",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1710618,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "6": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_20",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_20",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_20",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/20",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1710618,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "7": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "live",
+                  "variable": "custom:lt_tally_21",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "selected",
+                  "variable": "custom:lt_tally_21",
+                },
+                "style": {
+                  "bgcolor": 30464,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "played",
+                  "variable": "custom:lt_tally_21",
+                },
+                "style": {
+                  "bgcolor": 11171584,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/select/21",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 1710618,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+        },
+        "3": {
+          "0": {
+            "feedbacks": [
+              {
+                "connectionId": "internal",
+                "definitionId": "variable_value",
+                "id": "irs",
+                "isInverted": false,
+                "options": {
+                  "op": "eq",
+                  "value": "true",
+                  "variable": "custom:lt_any_live",
+                },
+                "style": {
+                  "bgcolor": 13369344,
+                  "color": 16777215,
+                },
+                "type": "feedback",
+                "upgradeIndex": null,
+              },
+            ],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/play",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 43724,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "▶ PLAY",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "1": {
+            "feedbacks": [],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/reset",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 5592405,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "■ RESET",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "2": {
+            "feedbacks": [],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/prev",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 2245768,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "◀ PREV",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "3": {
+            "feedbacks": [],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/next",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 2245768,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "NEXT ▶",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "4": {
+            "feedbacks": [],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/clear-status",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 8930304,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "CLR STATUS",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+          "5": {
+            "feedbacks": [],
+            "localVariables": [],
+            "options": {
+              "rotaryActions": false,
+              "stepExpression": "",
+              "stepProgression": "auto",
+            },
+            "steps": {
+              "0": {
+                "action_sets": {
+                  "down": [
+                    {
+                      "connectionId": "generic_http_1",
+                      "definitionId": "post",
+                      "id": "irs",
+                      "options": {
+                        "body": "{}",
+                        "contenttype": "application/json",
+                        "header": "",
+                        "result_stringify": true,
+                        "url": "http://localhost:3000/api/companion/sync",
+                      },
+                      "type": "action",
+                      "upgradeIndex": 1,
+                    },
+                  ],
+                  "up": [],
+                },
+                "options": {
+                  "runWhileHeld": [],
+                },
+              },
+            },
+            "style": {
+              "alignment": "center:center",
+              "bgcolor": 34986,
+              "color": 16777215,
+              "png64": null,
+              "pngalignment": "center:top",
+              "show_topbar": "default",
+              "size": "auto",
+              "text": "⟳ SYNC",
+              "textExpression": false,
+            },
+            "type": "button",
+          },
+        },
+      },
+      "gridSize": {
+        "maxColumn": 7,
+        "maxRow": 3,
+        "minColumn": 0,
+        "minRow": 0,
+      },
+      "id": "irs",
+      "name": "Cues",
+    },
+  },
+  "surfaceGroups": {},
+  "surfaces": {},
+  "triggerCollections": [],
+  "triggers": {
+    "lower_thirds_tally_extract": {
+      "actions": [
+        {
+          "connectionId": "internal",
+          "definitionId": "custom_variable_set_expression",
+          "id": "irs",
+          "options": {
+            "expression": "jsonpath($(custom:lt_raw_tally), "$.anyLive") ?? "false"",
+            "name": "lt_any_live",
+          },
+          "type": "action",
+          "upgradeIndex": null,
+        },
+        {
+          "connectionId": "internal",
+          "definitionId": "custom_variable_set_expression",
+          "id": "irs",
+          "options": {
+            "expression": "jsonpath($(custom:lt_raw_tally), "$.tallyByNumber.1") ?? "off"",
+            "name": "lt_tally_1",
+          },
+          "type": "action",
+          "upgradeIndex": null,
+        },
+        {
+          "connectionId": "internal",
+          "definitionId": "custom_variable_set_expression",
+          "id": "irs",
+          "options": {
+            "expression": "jsonpath($(custom:lt_raw_tally), "$.tallyByNumber.2") ?? "off"",
+            "name": "lt_tally_2",
+          },
+          "type": "action",
+          "upgradeIndex": null,
+        },
+      ],
+      "condition": [],
+      "events": [
+        {
+          "enabled": true,
+          "id": "irs",
+          "options": {
+            "variableId": "custom:lt_raw_tally",
+          },
+          "type": "variable_changed",
+        },
+      ],
+      "localVariables": [],
+      "options": {
+        "enabled": true,
+        "name": "Lower Thirds Tally Extract",
+        "sortOrder": 1,
+      },
+      "type": "trigger",
+    },
+    "lower_thirds_tally_poll": {
+      "actions": [
+        {
+          "connectionId": "generic_http_1",
+          "definitionId": "get",
+          "id": "irs",
+          "options": {
+            "header": "",
+            "jsonResultDataVariable": "lt_raw_tally",
+            "result_stringify": false,
+            "statusCodeVariable": "",
+            "url": "http://localhost:3000/api/companion/tally",
+          },
+          "type": "action",
+          "upgradeIndex": 1,
+        },
+      ],
+      "condition": [],
+      "events": [
+        {
+          "enabled": true,
+          "id": "irs",
+          "options": {
+            "seconds": 1,
+          },
+          "type": "interval",
+        },
+      ],
+      "localVariables": [],
+      "options": {
+        "enabled": true,
+        "name": "Lower Thirds Tally Poll",
+        "sortOrder": 0,
+      },
+      "type": "trigger",
+    },
+  },
+  "type": "full",
+  "version": 9,
+}
+`;

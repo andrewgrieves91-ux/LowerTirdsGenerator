@@ -1,14 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import request from "supertest";
 import { createApp } from "../server/app.js";
-import state from "../server/state/companionState.js";
-
-function resetState() {
-  state.pendingCommand = null;
-  state.commandAt = 0;
-  state.tally = [];
-  state.commandSeq = 0;
-}
+import { resetState } from "../server/state/companionState.js";
 
 describe("Companion API", () => {
   let app;

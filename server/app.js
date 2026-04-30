@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
+import vm from "vm";
 import { fileURLToPath } from "url";
 
 import { headerRouter } from "./middleware/headerRouter.js";
@@ -8,10 +9,28 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import companionRouter from "./routes/companion.js";
 import networkRouter from "./routes/network.js";
 import updateRouter from "./routes/update.js";
-import { UPDATE_OVERLAY_SCRIPT } from "./updateOverlay.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const OVERLAY_PATH = path.join(__dirname, "overlay", "update-overlay.client.js");
+
+let cachedOverlay = null;
+function getOverlayScript() {
+  if (cachedOverlay !== null) return cachedOverlay;
+  const src = fs.readFileSync(OVERLAY_PATH, "utf-8");
+  // Surface syntax errors at server startup rather than silently shipping
+  // a broken SPA to the client.
+  try {
+    new vm.Script(src, { filename: OVERLAY_PATH });
+  } catch (err) {
+    throw new Error(
+      `[overlay] Syntax error in ${OVERLAY_PATH}: ${err.message}`,
+    );
+  }
+  cachedOverlay = src;
+  return cachedOverlay;
+}
 
 let cachedIndexHtml = null;
 
@@ -23,7 +42,7 @@ function getIndexHtml(staticPath) {
 
   const raw = fs.readFileSync(path.join(staticPath, "index.html"), "utf-8");
   const globals = `<script>window.__LT_VERSION=${JSON.stringify(pkg.version)};window.__LT_UPDATE_URL=${JSON.stringify(pkg.updateUrl || "")};</script>`;
-  const overlay = `<script id="lt-update-overlay">${UPDATE_OVERLAY_SCRIPT}</script>`;
+  const overlay = `<script id="lt-update-overlay">${getOverlayScript()}</script>`;
   cachedIndexHtml = raw.replace("</body>", `${globals}\n${overlay}\n</body>`);
   return cachedIndexHtml;
 }

@@ -25,10 +25,9 @@ let running = false;
 let getMainWindow = null;
 
 // We hook setWindowOpenHandler from main.cjs. When the main window calls
-// window.open() with one of our NDI_* frame names, main.cjs inspects this
-// registry to decide whether the child window should be an offscreen sender
-// and which NDI sender to wire up.
-const pendingSubscribers = {};
+// window.open() with one of our NDI_* frame names, main.cjs delegates to
+// handleChildWindow() (below) to decide whether the child window should be
+// an offscreen sender and which NDI sender to wire up.
 
 function setMainWindowProvider(fn) {
   getMainWindow = fn;

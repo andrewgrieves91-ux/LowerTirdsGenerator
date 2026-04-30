@@ -1,7 +1,7 @@
 const { app, BrowserWindow, Menu, ipcMain, shell } = require("electron");
 const { createServer } = require("http");
 const path = require("path");
-const { checkForUpdates } = require("./updater.js");
+const { checkForUpdates } = require("./updater.cjs");
 const ndi = require("./ndiSender.cjs");
 const ffmpegNative = require("./ffmpegNative.cjs");
 
@@ -242,7 +242,7 @@ app.whenReady().then(async () => {
 });
 
 app.on("before-quit", async () => {
-  try { await ndi.stop(); } catch (err) { /* ignore */ }
+  try { await ndi.stop(); } catch { /* ignore */ }
   httpServer?.close();
 });
 
