@@ -83,10 +83,16 @@ function main() {
 
   const src = fs.readFileSync(BUNDLE, "utf8");
 
-  // Either the original applied-marker or the newer corrected formula
-  // (installed by patch-underline-logo-offset-correct) means we're done.
+  // Either the original applied-marker or one of the later corrected
+  // formulas (installed by patch-underline-logo-offset-correct, then
+  // updated again by patch-kt-nonmeta-perglyph-x) means we're done.
   const CORRECTED_MARKER = "var _euX=Oe+(H.eyebrowLogoOffset||0)*G;";
-  if (src.includes(APPLIED_MARKER) || src.includes(CORRECTED_MARKER)) {
+  const PERGLYPH_MARKER = "const _euX=_eX+(H.eyebrowLogoOffset||0)*G;";
+  if (
+    src.includes(APPLIED_MARKER) ||
+    src.includes(CORRECTED_MARKER) ||
+    src.includes(PERGLYPH_MARKER)
+  ) {
     console.log("[patch-underline-logo-offset] already applied — nothing to do.");
     return;
   }

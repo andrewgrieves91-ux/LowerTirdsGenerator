@@ -174,6 +174,109 @@ const PATCHES = [
   // Cue button label, and bump the two countdown setInterval bodies
   // from 500 ms to 50 ms so the .toFixed(1) seconds tick smoothly.
   "patch-live-play-cue-button.cjs",
+
+  // ====================================================================
+  // unify-meta-render-pipelines plan: Live / Edit / Export pixel parity.
+  // 14 divergences ranked by visual impact. Phase 1 lands the user-
+  // visible spacing/size fixes; Phase 2 the medium-impact shadow/measure
+  // fixes; Phase 3 the sub-pixel rounding/X fixes.
+  // ====================================================================
+
+  // Phase 1: visible to the eye.
+  // Edit's editor component initialised eyebrow/title gap state with
+  // `useState(29)` / `useState(19)` while Live/Tc fall back to ?? 8 / ?? 10.
+  // For cues with no explicit gap, Edit showed completely different
+  // vertical spacing. Aligns the editor defaults to 8 / 10.
+  "patch-edit-gap-defaults.cjs",
+  // Edit's xR factory measured text width with `.width` only. Live's K
+  // and Export's _c use Math.max(.width, .actualBoundingBoxRight||0) so
+  // italic/decorative glyphs that overhang advance width aren't clipped.
+  "patch-edit-factory-width-bbox.cjs",
+  // Edit's xR added the scaled border to NEITHER W nor H. Live adds it
+  // to both. Without it, a thick border draws into a smaller content
+  // rectangle in Edit than Live/Export, clipping the stroke and shifting
+  // the underline below the visible glyphs.
+  "patch-edit-factory-border-in-size.cjs",
+  // Export's _c factory added the scaled border to W only, not H. Adds
+  // it to the three height metrics so heights match widths and a thick
+  // border doesn't clip top/bottom of glyphs in the export frame.
+  "patch-export-factory-border-in-height.cjs",
+  // Edit's xR was called with `_xms = (At==="meta"?4:1)`, so its
+  // colorCanvas was rasterized at 4x for Meta. Live rasterizes at
+  // 1.121x. Same logical size after composition but very different
+  // anti-aliasing (4x->1x downsample is sharper than 1.121x->1x).
+  // Drops Edit to 1.121x to match Live exactly.
+  "patch-edit-factory-canvas-size.cjs",
+  // Edit's `Ye` only entered the factory branch when `An && Oe` (Meta
+  // only). Non-Meta animations went through direct strokeText/fillText
+  // at 1x rasterization while Live/Tc oversample. Restructures to
+  // `if(Oe){if(An){<meta>}else{<non-meta-factory>}}else{<direct>}` so
+  // any non-syncTest animation in Edit uses the same factory pipeline
+  // as Live/Tc.
+  "patch-edit-ye-non-meta-factory.cjs",
+
+  // Phase 2: visible at certain settings.
+  // Tc Meta underline measured text width at base font size and
+  // multiplied by `ue` (the meta scale). Kt/Ye scale the staging
+  // context's font BEFORE measuring. Advance-width rounding at
+  // different em sizes is non-linear, so the two approaches give
+  // different underline widths in many fonts. Aligns Tc to Kt/Ye.
+  "patch-tc-underline-measure.cjs",
+  // Tc used `p.shadowColor || "#000000"` in some paths and `??` in
+  // others. Live uses `??` everywhere. Standardise on `??` so an empty
+  // string (`""`) doesn't accidentally fall back to black in Tc only.
+  "patch-tc-shadow-color-coalesce.cjs",
+  // Ye's direct path allocated a fresh `_shTC` shadow canvas every
+  // frame and ran the shadow draw loop even when shadow was disabled.
+  // Wires the alloc through `__ltGetMtCanvas("ye-direct", ...)` and
+  // gates the loop on `z`. Direct path is rare after the non-meta
+  // factory patch above (only syncTest hits it) but still worth fixing.
+  "patch-edit-ye-direct-canvas-cache.cjs",
+
+  // Phase 3: sub-pixel parity.
+  // Three different rounding strategies for posY in Meta path: Kt raw,
+  // Ye rounded, Tc raw. Round in all three so the integer Y is the
+  // same across renderers (eyebrow/title inherit alignment from name).
+  "patch-unify-posy-rounding.cjs",
+  // Live Kt factory used a single X (`Oe = ln + It.x`) for ALL three
+  // glyph drawImages, ignoring per-element animation X (`pn.x`, `nn.x`)
+  // for non-Meta animations. Tc factory and Ye direct use per-glyph X.
+  // Introduces `_eX/_nX/_tX` aliases and substitutes them.
+  "patch-kt-nonmeta-perglyph-x.cjs",
+  // Tc's letter-opacity (direct) path rounded X with `Math.round(te+...)`
+  // while Kt and Ye never round X. Drops the rounding for parity.
+  "patch-tc-x-no-round.cjs",
+  // Tc Meta used a `_dse(translate+scale+drawImage(0,0,w,h))` helper
+  // while Kt/Ye use raw `drawImage(src, sx,sy,sw,sh, dx,dy, sw*Q,sh*Q)`.
+  // Browsers can produce sub-pixel different results between the two
+  // call shapes. Replaces the three `_dse` calls with the raw form.
+  "patch-tc-replace-dse.cjs",
+
+  // ====================================================================
+  // Follow-up fixes from user testing of the unified pipeline.
+  // ====================================================================
+
+  // Border thickness was contributing to vertical spacing because the
+  // factory's `nameContentH` / `eyebrowContentH` include the scaled
+  // border + 4px padding. Renderers used `nameContentH * G` to compute
+  // title Y from name Y, which made title move DOWN as border grew
+  // (and eyebrow move UP). Switches Meta-path spacing to use raw font
+  // size + meta scale only, so border has zero effect on line spacing.
+  "patch-spacing-fontsize-not-contenth.cjs",
+  // Title weight selection used `titleFontWeight || bodyWeight` which
+  // ignored the `bold` flag. With a custom titleFontWeight set, toggling
+  // bold left the title at its custom weight while eyebrow/name went
+  // 700. Adds a `bold ? "700" :` prefix to title weight selection in
+  // all 3 factories AND the 3 renderer-side font templates.
+  "patch-bold-overrides-title-weight.cjs",
+  // Non-Meta paths rounded each Y individually with
+  // `Math.round(posY + nameFontSize + titleGap)`, while Meta uses
+  // `Math.round(posY) + nameFontSize + titleGap`. For fractional posY
+  // the two differed by +/- 1 px, so switching from Meta to a non-Meta
+  // animation jumped the spacing visibly. Reorders the non-Meta var
+  // declarations to derive eyebrow/title from the rounded name Y so
+  // both paths produce identical Y values at meta-scale=1.
+  "patch-non-meta-spacing-from-rounded-name.cjs",
 ];
 
 let ok = true;

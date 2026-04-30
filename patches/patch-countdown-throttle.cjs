@@ -74,8 +74,18 @@ function main() {
     const oldCount = src.split(old).length - 1;
     const newCount = src.split(next).length - 1;
 
+    // Match the body without the trailing `,100)` — any other interval
+    // value means a later patch has already replaced our target.
+    const bodyOnly = old.slice(0, -5); // strip `,100)`
+    const supersededByLater =
+      oldCount === 0 && newCount === 0 && src.includes(bodyOnly);
+
     if (oldCount === 0 && newCount >= 1) {
       console.log(`[patch-countdown-throttle] ${label}: already applied`);
+      continue;
+    }
+    if (supersededByLater) {
+      console.log(`[patch-countdown-throttle] ${label}: superseded by a later patch — skipping`);
       continue;
     }
     if (oldCount === 0) {

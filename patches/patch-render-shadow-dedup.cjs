@@ -60,7 +60,7 @@ function main() {
   // Anything with `:0` as the shadow-off fallback is considered applied —
   // this covers both the original form and any form superseded by a later
   // patch (e.g. `Math.max(1, Math.ceil(...)):0`).
-  if (oldOccurrences === 0 && /shadowBlur\?\?10\)\/10\)\):0/.test(src)) {
+  if (oldOccurrences === 0 && /shadowBlur\?\?10\)\/(?:10|15)\)\):0/.test(src)) {
     console.log("[patch-render-shadow-dedup] already applied — nothing to do.");
     return;
   }
