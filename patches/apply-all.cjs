@@ -170,6 +170,10 @@ const PATCHES = [
   // helper installs a window-level cache and rewrites the 3 alloc
   // sites (Kt, Ye, Tc) to reuse a single canvas keyed by component.
   "patch-mt-canvas-cache.cjs",
+  // Cosmetic Live page fixes: remove the dev "[v2]" suffix from the Play
+  // Cue button label, and bump the two countdown setInterval bodies
+  // from 500 ms to 50 ms so the .toFixed(1) seconds tick smoothly.
+  "patch-live-play-cue-button.cjs",
 ];
 
 let ok = true;
