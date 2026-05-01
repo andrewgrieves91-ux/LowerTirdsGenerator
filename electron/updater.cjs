@@ -13,6 +13,116 @@ const CURRENT_VERSION = app.getVersion();
 let _cachedEtag = null;
 let _cachedRelease = null;
 
+// ─── Logger ───────────────────────────────────────────────────────────────
+// All update activity goes to userData/update.log so we can post-mortem
+// when the app fails to relaunch and the user has no console output.
+
+function logPath() {
+  try {
+    return path.join(app.getPath("userData"), "update.log");
+  } catch {
+    return path.join(os.tmpdir(), "ltg-update.log");
+  }
+}
+
+function log(line) {
+  const ts = new Date().toISOString();
+  const msg = `[${ts}] ${line}\n`;
+  try { fs.appendFileSync(logPath(), msg); } catch { /* ignore */ }
+  console.log(`[Updater] ${line}`);
+}
+
+// ─── Progress window ─────────────────────────────────────────────────────
+// A small, frame-less BrowserWindow that we drive from the main process via
+// webContents.executeJavaScript. The HTML is loaded as a data URL so we
+// don't depend on any disk file that the in-place install might be
+// shuffling around.
+
+let progressWin = null;
+
+const PROGRESS_HTML = `
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Updating Lower Thirds Generator</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #0a0a0a; color: #e5e5e5;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-app-region: drag; user-select: none; }
+  .wrap { display: flex; flex-direction: column; gap: 14px; padding: 28px; height: 100%; box-sizing: border-box; justify-content: center; }
+  h1 { margin: 0; font-size: 14px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #22d3ee; }
+  .ver { font-size: 11px; color: #9ca3af; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .bar { width: 100%; height: 8px; background: #1f2937; border-radius: 4px; overflow: hidden; }
+  .fill { height: 100%; background: linear-gradient(90deg, #06b6d4, #22d3ee); width: 0%; transition: width .15s ease; border-radius: 4px; }
+  .row { display: flex; justify-content: space-between; font-size: 12px; color: #d1d5db; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .err { color: #fca5a5; font-size: 12px; white-space: pre-wrap; line-height: 1.4; max-height: 80px; overflow: auto; display: none; }
+  .err.show { display: block; }
+  button { -webkit-app-region: no-drag; align-self: flex-end; padding: 6px 14px; border-radius: 4px; border: 1px solid #374151;
+    background: #1f2937; color: #e5e5e5; font-size: 12px; cursor: pointer; display: none; }
+  button.show { display: inline-block; }
+  button:hover { background: #374151; }
+</style></head><body>
+<div class="wrap">
+  <div>
+    <h1 id="ph">Preparing update…</h1>
+    <div class="ver" id="pv"></div>
+  </div>
+  <div class="bar"><div class="fill" id="pf"></div></div>
+  <div class="row"><span id="pl">—</span><span id="pr">0%</span></div>
+  <div class="err" id="pe"></div>
+  <button id="pb" onclick="window.close()">Close</button>
+</div>
+</body></html>
+`;
+
+function openProgressWindow(targetVersion) {
+  if (progressWin && !progressWin.isDestroyed()) return progressWin;
+  progressWin = new BrowserWindow({
+    width: 460,
+    height: 200,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    title: "Updating Lower Thirds Generator",
+    backgroundColor: "#0a0a0a",
+    webPreferences: { contextIsolation: true, nodeIntegration: false },
+  });
+  progressWin.removeMenu();
+  progressWin.loadURL(
+    "data:text/html;charset=utf-8," + encodeURIComponent(PROGRESS_HTML),
+  );
+  progressWin.webContents.once("did-finish-load", () => {
+    sendProgress({ headline: `Updating to v${targetVersion}`, version: `v${CURRENT_VERSION} → v${targetVersion}`, percent: 0, label: "Starting" });
+  });
+  progressWin.on("closed", () => { progressWin = null; });
+  return progressWin;
+}
+
+function sendProgress(state) {
+  if (!progressWin || progressWin.isDestroyed()) return;
+  const js = `(function(){
+    try {
+      ${state.headline !== undefined ? `document.getElementById('ph').textContent = ${JSON.stringify(state.headline)};` : ""}
+      ${state.version  !== undefined ? `document.getElementById('pv').textContent = ${JSON.stringify(state.version)};` : ""}
+      ${state.percent  !== undefined ? `document.getElementById('pf').style.width = ${JSON.stringify(state.percent + "%")};
+                                        document.getElementById('pr').textContent = ${JSON.stringify(Math.round(state.percent) + "%")};` : ""}
+      ${state.label    !== undefined ? `document.getElementById('pl').textContent = ${JSON.stringify(state.label)};` : ""}
+      ${state.error    !== undefined ? `var e=document.getElementById('pe'); e.textContent=${JSON.stringify(state.error)}; e.classList.add('show');
+                                        document.getElementById('pb').classList.add('show');
+                                        document.getElementById('pf').style.background='#7f1d1d';` : ""}
+    } catch(_){}
+  })();`;
+  progressWin.webContents.executeJavaScript(js).catch(() => {});
+  if (state.percent !== undefined) {
+    try { progressWin.setProgressBar(state.percent / 100); } catch {}
+  }
+}
+
+function closeProgressWindow() {
+  if (progressWin && !progressWin.isDestroyed()) progressWin.close();
+  progressWin = null;
+}
+
+// ─── GitHub release lookup ────────────────────────────────────────────────
+
 function parseRelease(release) {
   const version = (release.tag_name || "").replace(/^v/, "");
   const notes = release.body || "";
@@ -27,12 +137,9 @@ function fetchLatestRelease() {
       "User-Agent": "LowerThirdsGenerator",
       Accept: "application/vnd.github.v3+json",
     };
-    if (_cachedEtag) {
-      headers["If-None-Match"] = _cachedEtag;
-    }
+    if (_cachedEtag) headers["If-None-Match"] = _cachedEtag;
 
     const request = net.request({ url: GITHUB_API_URL, headers });
-
     let data = "";
 
     request.on("response", (response) => {
@@ -40,79 +147,85 @@ function fetchLatestRelease() {
         resolve(parseRelease(_cachedRelease));
         return;
       }
-
       if (response.statusCode === 403) {
-        reject(
-          new Error(
-            "Rate limited by GitHub \u2014 try again in a few minutes",
-          ),
-        );
+        reject(new Error("Rate limited by GitHub \u2014 try again in a few minutes"));
         return;
       }
-
       if (response.statusCode !== 200) {
         reject(new Error(`GitHub API returned HTTP ${response.statusCode}`));
         return;
       }
-
-      response.on("data", (chunk) => {
-        data += chunk.toString();
-      });
-
+      response.on("data", (chunk) => { data += chunk.toString(); });
       response.on("end", () => {
         try {
           const release = JSON.parse(data);
-
           const etag = response.headers.etag;
           const etagVal = Array.isArray(etag) ? etag[0] : etag;
           if (etagVal) _cachedEtag = etagVal;
           _cachedRelease = release;
-
           resolve(parseRelease(release));
         } catch {
           reject(new Error("Failed to parse GitHub release info"));
         }
       });
     });
-
     request.on("error", reject);
     request.end();
   });
 }
 
-function downloadFile(url) {
+// ─── Download with real progress ──────────────────────────────────────────
+
+function downloadFile(url, onProgress) {
   return new Promise((resolve, reject) => {
     const tmpPath = path.join(os.tmpdir(), `ltg-update-${Date.now()}.zip`);
     const fileStream = fs.createWriteStream(tmpPath);
 
-    function doRequest(reqUrl) {
+    function doRequest(reqUrl, redirectsLeft) {
       const request = net.request({
         url: reqUrl,
         headers: { "User-Agent": "LowerThirdsGenerator" },
+        redirect: "manual",
       });
 
       request.on("response", (response) => {
         if (response.statusCode >= 300 && response.statusCode < 400) {
           const location = response.headers.location;
           const redirectUrl = Array.isArray(location) ? location[0] : location;
-          if (redirectUrl) {
-            doRequest(redirectUrl);
+          if (redirectUrl && redirectsLeft > 0) {
+            log(`Download redirect ${response.statusCode} -> ${redirectUrl}`);
+            doRequest(redirectUrl, redirectsLeft - 1);
             return;
           }
+          fileStream.destroy();
+          try { fs.unlinkSync(tmpPath); } catch {}
+          reject(new Error(`Too many redirects or missing Location header (HTTP ${response.statusCode})`));
+          return;
         }
-
         if (response.statusCode !== 200) {
-          fs.unlinkSync(tmpPath);
+          fileStream.destroy();
+          try { fs.unlinkSync(tmpPath); } catch {}
           reject(new Error(`Download failed: HTTP ${response.statusCode}`));
           return;
         }
 
+        const lenHdr = response.headers["content-length"];
+        const lenVal = Array.isArray(lenHdr) ? lenHdr[0] : lenHdr;
+        const total = parseInt(lenVal, 10) || 0;
+        let received = 0;
+
         response.on("data", (chunk) => {
           fileStream.write(chunk);
+          received += chunk.length;
+          if (onProgress) onProgress(received, total);
         });
-
         response.on("end", () => {
           fileStream.end(() => resolve(tmpPath));
+        });
+        response.on("error", (err) => {
+          fileStream.destroy();
+          try { fs.unlinkSync(tmpPath); } catch {}
+          reject(err);
         });
       });
 
@@ -121,11 +234,10 @@ function downloadFile(url) {
         try { fs.unlinkSync(tmpPath); } catch {}
         reject(err);
       });
-
       request.end();
     }
 
-    doRequest(url);
+    doRequest(url, 5);
   });
 }
 
@@ -133,75 +245,148 @@ function extractZip(zipPath, destDir) {
   return new Promise((resolve, reject) => {
     fs.mkdirSync(destDir, { recursive: true });
     execFile("unzip", ["-o", zipPath, "-d", destDir], (err, _stdout, stderr) => {
-      if (err) {
-        reject(new Error(`unzip failed: ${stderr || err.message}`));
-      } else {
-        resolve();
-      }
+      if (err) reject(new Error(`unzip failed: ${stderr || err.message}`));
+      else resolve();
     });
   });
 }
 
-function rmSync(dirPath) {
-  fs.rmSync(dirPath, { recursive: true, force: true });
+function rmIfExists(p) {
+  try { fs.rmSync(p, { recursive: true, force: true }); } catch { /* ignore */ }
 }
+
+// ─── Atomic replace with rollback ─────────────────────────────────────────
+// Strategy:
+//   1. Move current dist/public -> dist/public.bak,  server -> server.bak
+//   2. Copy new dist/public + server into place
+//   3. On any failure, restore from .bak
+//   4. On success, delete .bak
 
 async function applyUpdate(downloadUrl, newVersion) {
   const appPath = app.getAppPath();
   const tmpDir = path.join(os.tmpdir(), `ltg-update-extract-${Date.now()}`);
 
-  try {
-    console.log("[Updater] Downloading update...");
-    const zipPath = await downloadFile(downloadUrl);
+  const targetPublic = path.join(appPath, "dist", "public");
+  const targetServer = path.join(appPath, "server");
+  const backupPublic = path.join(appPath, "dist", "public.bak");
+  const backupServer = path.join(appPath, "server.bak");
 
-    console.log("[Updater] Extracting...");
+  log(`applyUpdate start: appPath=${appPath} tmpDir=${tmpDir}`);
+
+  try {
+    // ── Download ──
+    sendProgress({ label: "Downloading", percent: 0 });
+    let lastPct = -1;
+    const zipPath = await downloadFile(downloadUrl, (received, total) => {
+      // Map download to 0–80% of the overall progress.
+      let pct;
+      if (total > 0) {
+        pct = Math.min(80, (received / total) * 80);
+      } else {
+        // Unknown size: rough estimate based on received bytes (cap at 80%).
+        pct = Math.min(70, (received / (5 * 1024 * 1024)) * 70);
+      }
+      const rounded = Math.floor(pct);
+      if (rounded !== lastPct) {
+        lastPct = rounded;
+        const mbR = (received / (1024 * 1024)).toFixed(1);
+        const mbT = total > 0 ? (total / (1024 * 1024)).toFixed(1) : "?";
+        sendProgress({ label: `Downloading ${mbR} / ${mbT} MB`, percent: pct });
+      }
+    });
+    log(`Downloaded zip to ${zipPath}`);
+
+    // ── Extract ──
+    sendProgress({ label: "Extracting", percent: 82 });
     await extractZip(zipPath, tmpDir);
+    log(`Extracted to ${tmpDir}`);
 
     const newPublic = path.join(tmpDir, "dist", "public");
     const newServer = path.join(tmpDir, "server");
-
     if (!fs.existsSync(newPublic) || !fs.existsSync(newServer)) {
       throw new Error("Update ZIP is missing dist/public or server directories");
     }
 
-    const targetPublic = path.join(appPath, "dist", "public");
-    const targetServer = path.join(appPath, "server");
+    // ── Atomic-ish replace ──
+    sendProgress({ label: "Installing files", percent: 88 });
+    // Wipe any leftover backups from a previous interrupted update.
+    rmIfExists(backupPublic);
+    rmIfExists(backupServer);
 
-    console.log("[Updater] Replacing files...");
-    rmSync(targetPublic);
-    fs.cpSync(newPublic, targetPublic, { recursive: true });
+    // Backup current files (rename = fast, atomic on same filesystem).
+    if (fs.existsSync(targetPublic)) fs.renameSync(targetPublic, backupPublic);
+    if (fs.existsSync(targetServer)) fs.renameSync(targetServer, backupServer);
+    log(`Backed up current dist/public + server to .bak`);
 
-    rmSync(targetServer);
-    fs.cpSync(newServer, targetServer, { recursive: true });
+    let installError = null;
+    try {
+      fs.cpSync(newPublic, targetPublic, { recursive: true });
+      fs.cpSync(newServer, targetServer, { recursive: true });
+      log(`Copied new dist/public + server into place`);
+    } catch (err) {
+      installError = err;
+    }
 
+    if (installError) {
+      // Roll back.
+      rmIfExists(targetPublic);
+      rmIfExists(targetServer);
+      if (fs.existsSync(backupPublic)) fs.renameSync(backupPublic, targetPublic);
+      if (fs.existsSync(backupServer)) fs.renameSync(backupServer, targetServer);
+      throw installError;
+    }
+
+    // Update package.json version (in place, only the version field).
+    sendProgress({ label: "Updating manifest", percent: 94 });
     const pkgPath = path.join(appPath, "package.json");
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
-    pkg.version = newVersion;
-    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
+    try {
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+      pkg.version = newVersion;
+      fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
+      log(`Updated package.json version to ${newVersion}`);
+    } catch (err) {
+      log(`WARN: failed to update package.json: ${err.message}`);
+    }
 
-    console.log("[Updater] Cleaning up...");
+    // Cleanup.
+    sendProgress({ label: "Cleaning up", percent: 97 });
     try { fs.unlinkSync(zipPath); } catch {}
-    rmSync(tmpDir);
+    rmIfExists(tmpDir);
+    rmIfExists(backupPublic);
+    rmIfExists(backupServer);
+    log(`Cleanup done`);
 
-    console.log("[Updater] Update applied successfully.");
+    sendProgress({ label: "Restarting", percent: 100 });
     return true;
   } catch (err) {
-    rmSync(tmpDir);
+    log(`applyUpdate FAILED: ${err.message}\n${err.stack || ""}`);
+    rmIfExists(tmpDir);
     throw err;
   }
 }
 
+// ─── Restart logic ────────────────────────────────────────────────────────
+// On macOS, calling app.exit() too quickly after relaunch() can race with
+// the launch; we give it 600ms to schedule the new process before quitting.
+
+function restartApp() {
+  log("Scheduling relaunch + exit");
+  try { app.relaunch(); } catch (err) { log(`relaunch failed: ${err.message}`); }
+  setTimeout(() => {
+    log("Exiting now");
+    try { app.exit(0); } catch { app.quit(); }
+  }, 600);
+}
+
+// ─── Top-level orchestration ──────────────────────────────────────────────
+
 async function checkForUpdates(silent = true) {
   try {
-    console.log(
-      `[Updater] Checking for updates... Current version: ${CURRENT_VERSION}`,
-    );
+    log(`Checking for updates... current=${CURRENT_VERSION} silent=${silent}`);
     const latest = await fetchLatestRelease();
-    console.log(`[Updater] Latest version: ${latest.version}`);
+    log(`Latest=${latest.version}`);
 
     if (compareVersions(latest.version, CURRENT_VERSION) > 0) {
-      console.log(`[Updater] Update available: ${latest.version}`);
-
       const result = await dialog.showMessageBox(
         BrowserWindow.getFocusedWindow(),
         {
@@ -215,42 +400,34 @@ async function checkForUpdates(silent = true) {
         },
       );
 
-      if (result.response === 0) {
-        const progressWin = BrowserWindow.getFocusedWindow();
-        if (progressWin) {
-          progressWin.setProgressBar(0.5);
-        }
+      if (result.response !== 0) return;
 
-        try {
-          await applyUpdate(latest.downloadUrl, latest.version);
+      openProgressWindow(latest.version);
 
-          if (progressWin) progressWin.setProgressBar(-1);
-
-          app.relaunch();
-          app.exit(0);
-        } catch (err) {
-          if (progressWin) progressWin.setProgressBar(-1);
-          console.error("[Updater] Install failed:", err.message);
-          dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
-            type: "error",
-            title: "Update Failed",
-            message: "Could not install the update.",
-            detail: err.message,
-          });
-        }
+      try {
+        await applyUpdate(latest.downloadUrl, latest.version);
+        // Brief pause so user sees "Restarting" before the window closes.
+        setTimeout(() => {
+          closeProgressWindow();
+          restartApp();
+        }, 700);
+      } catch (err) {
+        sendProgress({ label: "Update failed", error: err.message });
+        log(`Install failed: ${err.message}`);
+        // Leave the window open so the user can read the error.
       }
     } else if (!silent) {
       dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
         type: "info",
         title: "No Updates",
         message: "You're running the latest version!",
-        detail: `Current version: v${CURRENT_VERSION}`,
+        detail: `Current version: v${CURRENT_VERSION}\nLog: ${logPath()}`,
       });
     } else {
-      console.log("[Updater] App is up to date.");
+      log("App is up to date");
     }
   } catch (error) {
-    console.error("[Updater] Error checking for updates:", error.message);
+    log(`Error checking for updates: ${error.message}`);
     if (!silent) {
       const isRateLimit = error.message && error.message.includes("Rate limited");
       dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
@@ -259,7 +436,7 @@ async function checkForUpdates(silent = true) {
         message: "Could not check for updates.",
         detail: isRateLimit
           ? error.message
-          : "Please check your network connection and try again.",
+          : `${error.message}\n\nLog: ${logPath()}`,
       });
     }
   }
