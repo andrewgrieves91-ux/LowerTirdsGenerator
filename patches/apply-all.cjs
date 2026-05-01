@@ -277,6 +277,20 @@ const PATCHES = [
   // declarations to derive eyebrow/title from the rounded name Y so
   // both paths produce identical Y values at meta-scale=1.
   "patch-non-meta-spacing-from-rounded-name.cjs",
+
+  // ====================================================================
+  // DeckLink Duo 2 SDI output integration.
+  // ====================================================================
+
+  // Wires the Live page's two screen-selector dropdowns + Pop Out
+  // buttons to the DeckLink overlay (server/overlay/decklink-overlay.client.js).
+  // Merges window.__ltDecklinkOutputs into both `le.map(...)` calls and
+  // both `le[De|Ie]` popup-lookups, and tail-calls
+  // window.__ltDecklinkOnSelect from the onValueChange handlers so the
+  // overlay can remember which DeckLink (if any) is the current target
+  // per source. No anchor dependencies on prior patches — order doesn't
+  // matter relative to the others.
+  "patch-live-decklink-selector.cjs",
 ];
 
 let ok = true;

@@ -2,7 +2,9 @@ const { app, BrowserWindow, Menu, ipcMain, shell } = require("electron");
 const { createServer } = require("http");
 const path = require("path");
 const { checkForUpdates } = require("./updater.cjs");
+const frameSource = require("./frameSource.cjs");
 const ndi = require("./ndiSender.cjs");
+const decklink = require("./decklinkOutput.cjs");
 const ffmpegNative = require("./ffmpegNative.cjs");
 
 app.commandLine.appendSwitch("enable-gpu-rasterization");
@@ -120,7 +122,7 @@ app.whenReady().then(async () => {
   expressApp.set("port", serverPort);
   console.log(`Express running on http://localhost:${serverPort}`);
 
-  ndi.setMainWindowProvider(() => mainWindow);
+  frameSource.setMainWindowProvider(() => mainWindow);
 
   mainWindow = new BrowserWindow({
     width: 1400,
@@ -139,12 +141,12 @@ app.whenReady().then(async () => {
   mainWindow.webContents.setWindowOpenHandler(({ url, frameName }) => {
     console.log(`[main] setWindowOpenHandler: url=${url} frameName="${frameName}"`);
     if (url.startsWith("http://localhost") || url.startsWith("file://")) {
-      const ndiChild = ndi.handleChildWindow(frameName);
-      if (ndiChild) {
-        console.log(`[main] NDI child window matched: ${frameName}`);
+      const offscreen = frameSource.handleChildWindow(frameName);
+      if (offscreen) {
+        console.log(`[main] frameSource child window matched: ${frameName} (source=${offscreen.source})`);
         return {
           action: "allow",
-          overrideBrowserWindowOptions: ndiChild.overrideBrowserWindowOptions,
+          overrideBrowserWindowOptions: offscreen.overrideBrowserWindowOptions,
         };
       }
       return {
@@ -163,13 +165,12 @@ app.whenReady().then(async () => {
     return { action: "deny" };
   });
 
-  // When a child window is actually created, attach frame capture if it's ours.
   mainWindow.webContents.on("did-create-window", (childWindow, details) => {
     console.log(`[main] did-create-window: frameName="${details.frameName}" url=${details.url}`);
-    const ndiChild = ndi.handleChildWindow(details.frameName);
-    if (ndiChild && typeof ndiChild.attach === "function") {
-      console.log(`[main] attaching NDI frame capture to child window ${details.frameName}`);
-      ndiChild.attach(childWindow);
+    const offscreen = frameSource.handleChildWindow(details.frameName);
+    if (offscreen && typeof offscreen.attach === "function") {
+      console.log(`[main] attaching frameSource source ${offscreen.source} to child window`);
+      offscreen.attach(childWindow);
     }
   });
 
@@ -194,6 +195,23 @@ app.whenReady().then(async () => {
     rebuildMenu();
     return true;
   });
+
+  // ─── DeckLink SDI output (Duo 2) ───
+  ipcMain.handle("decklink:enumerate", () => decklink.enumerate());
+  ipcMain.handle("decklink:status", () => decklink.status());
+  ipcMain.handle("decklink:start", async (_e, deviceId, source) => {
+    return await decklink.start(deviceId, source);
+  });
+  ipcMain.handle("decklink:stop", async (_e, deviceId) => {
+    return await decklink.stop(deviceId);
+  });
+  if (decklink.isAvailable()) {
+    decklink.startPolling();
+    console.log("[decklink] device polling started");
+  } else {
+    const s = decklink.status();
+    console.log("[decklink] unavailable:", s.loadError || "native addon not loaded");
+  }
 
   // ─── Native ffmpeg (Export page) — Tier C1 ───
   ipcMain.handle("ffmpeg:detect", () => {
@@ -242,7 +260,10 @@ app.whenReady().then(async () => {
 });
 
 app.on("before-quit", async () => {
+  try { decklink.stopPolling(); } catch { /* ignore */ }
+  try { await decklink.stopAll(); } catch { /* ignore */ }
   try { await ndi.stop(); } catch { /* ignore */ }
+  try { await frameSource.stopAll(); } catch { /* ignore */ }
   httpServer?.close();
 });
 

@@ -1,6 +1,6 @@
 {
   "filename": "index-iitzneuS.js",
-  "sha256": "4e057fc29f4e5aac368f724d98ac87fa628ab106f1bf1f968fee4c52985c3686",
-  "size": 712108,
+  "sha256": "95fb10b9f1dfb28df3a3ead6a192304c7a075d85eec98711f71f7d99b4e13b3e",
+  "size": 716633,
   "note": "Pinned bundle hash. patches/* are written against this exact byte stream. If the bundle is rebuilt and this hash changes, every patch's string.replace will silently fail and the app will ship broken. See patches/README.md for the unpin/repin workflow."
 }

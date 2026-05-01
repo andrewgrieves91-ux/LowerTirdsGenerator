@@ -20,3 +20,11 @@ releases/*.dmg
 # Vitest snapshot updates are in tests/__snapshots__ and should be tracked,
 # but Vitest itself caches state under tests/.vitest-cache.
 tests/.vitest-cache/
+# Blackmagic DeckLink SDK is not redistributable. Each developer downloads
+# it from blackmagicdesign.com/support and runs build/download-decklink-sdk.sh
+# to populate electron/native/decklink-output/include/. The README.md in
+# that folder is committed; everything else there is generated.
+electron/native/decklink-output/include/*.h
+electron/native/decklink-output/include/*.cpp
+electron/native/decklink-output/include/*.rtf
+electron/native/decklink-output/build/
