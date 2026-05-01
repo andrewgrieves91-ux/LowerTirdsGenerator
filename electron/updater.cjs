@@ -19,7 +19,9 @@ let _cachedRelease = null;
 
 function logPath() {
   try {
-    return path.join(app.getPath("userData"), "update.log");
+    const dir = app.getPath("userData");
+    try { fs.mkdirSync(dir, { recursive: true }); } catch { /* ignore */ }
+    return path.join(dir, "update.log");
   } catch {
     return path.join(os.tmpdir(), "ltg-update.log");
   }
@@ -28,8 +30,24 @@ function logPath() {
 function log(line) {
   const ts = new Date().toISOString();
   const msg = `[${ts}] ${line}\n`;
-  try { fs.appendFileSync(logPath(), msg); } catch { /* ignore */ }
+  const p = logPath();
+  try {
+    fs.appendFileSync(p, msg);
+  } catch (err) {
+    // Surface the failure so we don't go silent.
+    console.error(`[Updater] failed to write log to ${p}:`, err && err.message);
+  }
   console.log(`[Updater] ${line}`);
+}
+
+// Friendly extraction of an error message — Error.message can be undefined
+// (custom errors, Electron NetworkErrors, plain string throws, etc.).
+function errMsg(err) {
+  if (!err) return "Unknown error";
+  if (typeof err === "string") return err;
+  if (err.message) return err.message;
+  if (err.code) return `Error code: ${err.code}`;
+  try { return JSON.stringify(err); } catch { return String(err); }
 }
 
 // ─── Progress window ─────────────────────────────────────────────────────
@@ -181,63 +199,50 @@ function downloadFile(url, onProgress) {
     const tmpPath = path.join(os.tmpdir(), `ltg-update-${Date.now()}.zip`);
     const fileStream = fs.createWriteStream(tmpPath);
 
-    function doRequest(reqUrl, redirectsLeft) {
-      const request = net.request({
-        url: reqUrl,
-        headers: { "User-Agent": "LowerThirdsGenerator" },
-        redirect: "manual",
-      });
-
-      request.on("response", (response) => {
-        if (response.statusCode >= 300 && response.statusCode < 400) {
-          const location = response.headers.location;
-          const redirectUrl = Array.isArray(location) ? location[0] : location;
-          if (redirectUrl && redirectsLeft > 0) {
-            log(`Download redirect ${response.statusCode} -> ${redirectUrl}`);
-            doRequest(redirectUrl, redirectsLeft - 1);
-            return;
-          }
-          fileStream.destroy();
-          try { fs.unlinkSync(tmpPath); } catch {}
-          reject(new Error(`Too many redirects or missing Location header (HTTP ${response.statusCode})`));
-          return;
-        }
-        if (response.statusCode !== 200) {
-          fileStream.destroy();
-          try { fs.unlinkSync(tmpPath); } catch {}
-          reject(new Error(`Download failed: HTTP ${response.statusCode}`));
-          return;
-        }
-
-        const lenHdr = response.headers["content-length"];
-        const lenVal = Array.isArray(lenHdr) ? lenHdr[0] : lenHdr;
-        const total = parseInt(lenVal, 10) || 0;
-        let received = 0;
-
-        response.on("data", (chunk) => {
-          fileStream.write(chunk);
-          received += chunk.length;
-          if (onProgress) onProgress(received, total);
-        });
-        response.on("end", () => {
-          fileStream.end(() => resolve(tmpPath));
-        });
-        response.on("error", (err) => {
-          fileStream.destroy();
-          try { fs.unlinkSync(tmpPath); } catch {}
-          reject(err);
-        });
-      });
-
-      request.on("error", (err) => {
-        fileStream.destroy();
-        try { fs.unlinkSync(tmpPath); } catch {}
-        reject(err);
-      });
-      request.end();
+    function fail(err) {
+      try { fileStream.destroy(); } catch {}
+      try { fs.unlinkSync(tmpPath); } catch {}
+      reject(err instanceof Error ? err : new Error(errMsg(err)));
     }
 
-    doRequest(url, 5);
+    // Let Electron follow redirects automatically (default behaviour). GitHub
+    // release-asset URLs always redirect to objects.githubusercontent.com,
+    // and the previous "manual" mode was silently aborting those requests.
+    const request = net.request({
+      url,
+      headers: { "User-Agent": "LowerThirdsGenerator" },
+    });
+
+    // Defensive: if Electron asks us about a redirect, allow it explicitly.
+    request.on("redirect", (statusCode, method, redirectUrl) => {
+      log(`Download redirect ${statusCode} -> ${redirectUrl}`);
+      try { request.followRedirect(); } catch (err) { fail(err); }
+    });
+
+    request.on("response", (response) => {
+      if (response.statusCode !== 200) {
+        fail(new Error(`Download failed: HTTP ${response.statusCode}`));
+        return;
+      }
+
+      const lenHdr = response.headers["content-length"];
+      const lenVal = Array.isArray(lenHdr) ? lenHdr[0] : lenHdr;
+      const total = parseInt(lenVal, 10) || 0;
+      let received = 0;
+
+      response.on("data", (chunk) => {
+        try { fileStream.write(chunk); } catch (err) { fail(err); return; }
+        received += chunk.length;
+        if (onProgress) onProgress(received, total);
+      });
+      response.on("end", () => {
+        fileStream.end(() => resolve(tmpPath));
+      });
+      response.on("error", (err) => fail(err));
+    });
+
+    request.on("error", (err) => fail(err));
+    request.end();
   });
 }
 
@@ -271,7 +276,7 @@ async function applyUpdate(downloadUrl, newVersion) {
   const backupPublic = path.join(appPath, "dist", "public.bak");
   const backupServer = path.join(appPath, "server.bak");
 
-  log(`applyUpdate start: appPath=${appPath} tmpDir=${tmpDir}`);
+    log(`applyUpdate start: appPath=${appPath} tmpDir=${tmpDir} url=${downloadUrl}`);
 
   try {
     // ── Download ──
@@ -359,7 +364,7 @@ async function applyUpdate(downloadUrl, newVersion) {
     sendProgress({ label: "Restarting", percent: 100 });
     return true;
   } catch (err) {
-    log(`applyUpdate FAILED: ${err.message}\n${err.stack || ""}`);
+    log(`applyUpdate FAILED: ${errMsg(err)}\n${err && err.stack || ""}`);
     rmIfExists(tmpDir);
     throw err;
   }
@@ -412,8 +417,11 @@ async function checkForUpdates(silent = true) {
           restartApp();
         }, 700);
       } catch (err) {
-        sendProgress({ label: "Update failed", error: err.message });
-        log(`Install failed: ${err.message}`);
+        const msg = errMsg(err);
+        const detail = `${msg}\n\nLog: ${logPath()}`;
+        sendProgress({ label: "Update failed", error: detail });
+        log(`Install failed: ${msg}`);
+        if (err && err.stack) log(`Stack: ${err.stack}`);
         // Leave the window open so the user can read the error.
       }
     } else if (!silent) {
@@ -427,16 +435,15 @@ async function checkForUpdates(silent = true) {
       log("App is up to date");
     }
   } catch (error) {
-    log(`Error checking for updates: ${error.message}`);
+    const msg = errMsg(error);
+    log(`Error checking for updates: ${msg}`);
     if (!silent) {
-      const isRateLimit = error.message && error.message.includes("Rate limited");
+      const isRateLimit = msg.includes("Rate limited");
       dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
         type: "error",
         title: "Update Check Failed",
         message: "Could not check for updates.",
-        detail: isRateLimit
-          ? error.message
-          : `${error.message}\n\nLog: ${logPath()}`,
+        detail: isRateLimit ? msg : `${msg}\n\nLog: ${logPath()}`,
       });
     }
   }
