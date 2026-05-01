@@ -1,42 +1,51 @@
-# DeckLink SDK headers — vendored at build time
+# DeckLink — hand-rolled minimal interface
 
-This directory is intentionally (mostly) empty in the repository. The
-Blackmagic DeckLink SDK is **not redistributable** under a permissive
-license — Blackmagic require each developer to accept their license at
-their support page before downloading.
+This folder contains a self-contained, hand-written subset of the Blackmagic
+DeckLink ABI:
 
-The vendor script `build/download-decklink-sdk.sh` populates this folder
-from a user-downloaded SDK on the developer's machine.
+- `DeckLinkAPI.h` — re-declares the five interfaces and ~eleven methods the
+  app actually calls (enumerate devices, open an output, push BGRA frames at
+  1080p50). Everything else is omitted.
+- `DeckLinkAPIDispatch.cpp` — `dlopen`s
+  `/Library/Frameworks/DeckLinkAPI.framework` at runtime via `CFBundle` and
+  resolves `CreateDeckLinkIteratorInstance_0004` /
+  `CreateDeckLinkAPIInformationInstance_0001`. No compile-time link
+  dependency on the framework.
 
-## One-time setup (developer machine)
-
-1. Visit
-   <https://www.blackmagicdesign.com/support/family/capture-and-playback>.
-2. Find **Desktop Video SDK** for Mac and click Download.
-3. Fill in the name + email form, accept the Blackmagic license.
-4. Unzip the archive (typically lands in `~/Downloads/`).
-5. Run:
-
-   ```bash
-   bash build/download-decklink-sdk.sh
-   ```
-
-The script auto-locates an extracted `Blackmagic_DeckLink_SDK_*` folder
-under `~/Downloads/`, `~/Desktop/`, `~/Documents/`, or `/Applications/`,
-and copies the required headers + `DeckLinkAPIDispatch.cpp` into this
-directory. After that, `npm run decklink:build` will succeed.
+We do **not** ship or require the official Blackmagic SDK. New checkouts
+build with just `npm run decklink:build` — no license-gated download step.
 
 ## Runtime requirement
 
-The DeckLink SDK headers + dispatch file are only needed to **build** the
-native addon. At runtime the addon dlopens
-`/Library/Frameworks/DeckLinkAPI.framework`, which is installed by the
-**Blackmagic Desktop Video** package (free, ships with all DeckLink
-hardware). Users running the packaged `.app` only need Desktop Video
-installed; they never see the SDK.
+The user's Mac must have **Blackmagic Desktop Video** installed (free
+download from blackmagicdesign.com/support). That ships
+`/Library/Frameworks/DeckLinkAPI.framework`, which is what physically drives
+the DeckLink card. If the framework is absent, the dispatch loader returns
+`nullptr` and the app reports the DeckLink module as unavailable; the rest
+of the app keeps working unchanged.
 
-## Why isn't this auto-downloaded?
+## ABI-stability bet
 
-Same reason the NDI SDK isn't auto-downloaded: the SDK ships under a
-license that requires explicit acceptance. The `download-decklink-sdk.sh`
-script will print the URL and instructions if it can't find the SDK.
+We rely on Blackmagic keeping their COM-style vtables append-only across
+Desktop Video releases — i.e., they never reorder existing methods, only
+add new ones at the end. That has been their published policy and observed
+behaviour since SDK 11 (2018).
+
+If a future release breaks this, the addon segfaults at startup and the
+fix is to:
+
+1. Read the latest "DeckLink SDK Manual" PDF for the changed interface.
+2. Update the slot order / count in `DeckLinkAPI.h`.
+3. Recompile.
+
+The static asserts in `src/decklink_output.mm` and the slot-index
+comments in `DeckLinkAPI.h` exist precisely to make this audit trivial
+when it eventually happens.
+
+## Files committed here
+
+| File                    | Origin                              | License        |
+| ----------------------- | ----------------------------------- | -------------- |
+| `DeckLinkAPI.h`         | This project (hand-written)         | MIT (this repo) |
+| `DeckLinkAPIDispatch.cpp` | This project (hand-written)       | MIT (this repo) |
+| `README.md`             | This project                        | MIT (this repo) |

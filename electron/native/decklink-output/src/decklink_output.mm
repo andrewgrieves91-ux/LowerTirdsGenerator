@@ -29,9 +29,83 @@
 #include <map>
 #include <mutex>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "DeckLinkAPI.h"
+
+// ─────────────────────────────────────────────────────────────────────────
+// Compile-time vtable-layout sanity checks
+//
+// These don't fully prove the ABI is right (the C++ standard doesn't expose
+// vtable indices as constexpr), but they catch the common ways a future
+// DeckLinkAPI.h edit can drift:
+//
+//   1. Accidental data-member addition to a base class — sizeof grows past
+//      a single vptr.
+//   2. Removed inheritance / changed class hierarchy.
+//   3. Wrong return type or argument count on the methods we actually call
+//      (the decltype checks force the compiler to verify each signature).
+//
+// If any of these trip, re-read DeckLinkAPI.h's "ABI-stability bet" comment
+// and reconcile with the latest Blackmagic SDK manual.
+
+static_assert(sizeof(IUnknown_LT) == sizeof(void*),
+              "IUnknown_LT must contain only its vptr — no data members");
+static_assert(std::is_base_of<IUnknown_LT, IDeckLink>::value,
+              "IDeckLink must inherit IUnknown_LT");
+static_assert(std::is_base_of<IUnknown_LT, IDeckLinkIterator>::value,
+              "IDeckLinkIterator must inherit IUnknown_LT");
+static_assert(std::is_base_of<IUnknown_LT, IDeckLinkOutput>::value,
+              "IDeckLinkOutput must inherit IUnknown_LT");
+static_assert(std::is_base_of<IUnknown_LT, IDeckLinkVideoFrame>::value,
+              "IDeckLinkVideoFrame must inherit IUnknown_LT");
+static_assert(std::is_base_of<IDeckLinkVideoFrame, IDeckLinkMutableVideoFrame>::value,
+              "IDeckLinkMutableVideoFrame must inherit IDeckLinkVideoFrame");
+static_assert(std::is_base_of<IUnknown_LT, IDeckLinkAPIInformation>::value,
+              "IDeckLinkAPIInformation must inherit IUnknown_LT");
+
+// Method signature pinning. If a future DeckLinkAPI.h ever changes one of
+// these, the corresponding decltype mismatch fails compilation here before
+// it can crash at runtime.
+static_assert(std::is_same<
+    decltype(&IDeckLinkIterator::Next),
+    HRESULT (IDeckLinkIterator::*)(IDeckLink**)>::value,
+    "IDeckLinkIterator::Next signature drift");
+static_assert(std::is_same<
+    decltype(&IDeckLink::GetModelName),
+    HRESULT (IDeckLink::*)(CFStringRef*)>::value,
+    "IDeckLink::GetModelName signature drift");
+static_assert(std::is_same<
+    decltype(&IDeckLink::GetDisplayName),
+    HRESULT (IDeckLink::*)(CFStringRef*)>::value,
+    "IDeckLink::GetDisplayName signature drift");
+static_assert(std::is_same<
+    decltype(&IDeckLinkOutput::EnableVideoOutput),
+    HRESULT (IDeckLinkOutput::*)(BMDDisplayMode, BMDVideoOutputFlags)>::value,
+    "IDeckLinkOutput::EnableVideoOutput signature drift");
+static_assert(std::is_same<
+    decltype(&IDeckLinkOutput::DisableVideoOutput),
+    HRESULT (IDeckLinkOutput::*)()>::value,
+    "IDeckLinkOutput::DisableVideoOutput signature drift");
+static_assert(std::is_same<
+    decltype(&IDeckLinkOutput::CreateVideoFrame),
+    HRESULT (IDeckLinkOutput::*)(int32_t, int32_t, int32_t,
+                                 BMDPixelFormat, BMDFrameFlags,
+                                 IDeckLinkMutableVideoFrame**)>::value,
+    "IDeckLinkOutput::CreateVideoFrame signature drift");
+static_assert(std::is_same<
+    decltype(&IDeckLinkOutput::DisplayVideoFrameSync),
+    HRESULT (IDeckLinkOutput::*)(IDeckLinkVideoFrame*)>::value,
+    "IDeckLinkOutput::DisplayVideoFrameSync signature drift");
+static_assert(std::is_same<
+    decltype(&IDeckLinkVideoFrame::GetBytes),
+    HRESULT (IDeckLinkVideoFrame::*)(void**)>::value,
+    "IDeckLinkVideoFrame::GetBytes signature drift");
+static_assert(std::is_same<
+    decltype(&IDeckLinkAPIInformation::GetString),
+    HRESULT (IDeckLinkAPIInformation::*)(BMDDeckLinkAPIInformationID, CFStringRef*)>::value,
+    "IDeckLinkAPIInformation::GetString signature drift");
 
 // ─────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -102,13 +176,21 @@ struct SenderHandle {
 
 void DisableAndRelease(SenderHandle* h) {
   if (!h) return;
-  if (h->frame) { h->frame->Release(); h->frame = nullptr; }
+  if (h->frame) {
+    h->frame->Release();              // IUnknown_LT slot 2
+    h->frame = nullptr;
+  }
   if (h->output) {
-    if (h->enabled) { h->output->DisableVideoOutput(); }
-    h->output->Release();
+    if (h->enabled) {
+      h->output->DisableVideoOutput(); // IDeckLinkOutput slot 8
+    }
+    h->output->Release();             // IUnknown_LT slot 2
     h->output = nullptr;
   }
-  if (h->device) { h->device->Release(); h->device = nullptr; }
+  if (h->device) {
+    h->device->Release();             // IUnknown_LT slot 2
+    h->device = nullptr;
+  }
   h->enabled = false;
   h->destroyed = true;
 }
@@ -128,9 +210,9 @@ IDeckLink* FindDeviceByDisplayName(const std::string& deviceId) {
 
   IDeckLink* match = nullptr;
   IDeckLink* link = nullptr;
-  while (it->Next(&link) == S_OK) {
+  while (it->Next(&link) == S_OK) {                    // IDeckLinkIterator slot 3
     CFStringRef name = nullptr;
-    if (link->GetDisplayName(&name) == S_OK && name) {
+    if (link->GetDisplayName(&name) == S_OK && name) { // IDeckLink slot 4
       std::string s = CFStringToStd(name);
       CFRelease(name);
       if (s == deviceId) {
@@ -138,10 +220,10 @@ IDeckLink* FindDeviceByDisplayName(const std::string& deviceId) {
         break;
       }
     }
-    link->Release();
+    link->Release();                                   // IUnknown_LT slot 2
     link = nullptr;
   }
-  it->Release();
+  it->Release();                                       // IUnknown_LT slot 2
   return match;
 }
 
@@ -157,15 +239,16 @@ Napi::Value Enumerate(const Napi::CallbackInfo& info) {
 
   uint32_t idx = 0;
   IDeckLink* link = nullptr;
-  while (it->Next(&link) == S_OK) {
+  while (it->Next(&link) == S_OK) {                    // IDeckLinkIterator slot 3
     CFStringRef modelRef = nullptr;
     CFStringRef displayRef = nullptr;
-    link->GetModelName(&modelRef);
-    link->GetDisplayName(&displayRef);
+    link->GetModelName(&modelRef);                     // IDeckLink slot 3
+    link->GetDisplayName(&displayRef);                 // IDeckLink slot 4
 
     IDeckLinkOutput* outIface = nullptr;
+    // IUnknown_LT slot 0
     bool supportsOutput = (link->QueryInterface(IID_IDeckLinkOutput, (void**)&outIface) == S_OK && outIface != nullptr);
-    if (outIface) outIface->Release();
+    if (outIface) outIface->Release();                 // IUnknown_LT slot 2
 
     Napi::Object dev = Napi::Object::New(env);
     std::string displayName = CFStringToStd(displayRef);
@@ -179,11 +262,11 @@ Napi::Value Enumerate(const Napi::CallbackInfo& info) {
 
     if (modelRef) CFRelease(modelRef);
     if (displayRef) CFRelease(displayRef);
-    link->Release();
+    link->Release();                                   // IUnknown_LT slot 2
     link = nullptr;
     idx++;
   }
-  it->Release();
+  it->Release();                                       // IUnknown_LT slot 2
   return out;
 }
 
@@ -206,9 +289,10 @@ Napi::Value CreateSender(const Napi::CallbackInfo& info) {
   }
 
   IDeckLinkOutput* output = nullptr;
+  // IUnknown_LT slot 0
   HRESULT hr = device->QueryInterface(IID_IDeckLinkOutput, (void**)&output);
   if (hr != S_OK || !output) {
-    device->Release();
+    device->Release();                                 // IUnknown_LT slot 2
     Napi::Error::New(env, "DeckLink device has no output interface").ThrowAsJavaScriptException();
     return env.Null();
   }
@@ -221,9 +305,10 @@ Napi::Value CreateSender(const Napi::CallbackInfo& info) {
   // Note: DoesSupportVideoMode signature varies across SDK versions; we
   // skip the check and let EnableVideoOutput tell us.
 
+  // IDeckLinkOutput slot 7
   hr = output->EnableVideoOutput(mode, bmdVideoOutputFlagDefault);
   if (hr != S_OK) {
-    output->Release();
+    output->Release();                                 // IUnknown_LT slot 2
     device->Release();
     char err[128];
     std::snprintf(err, sizeof(err), "EnableVideoOutput(%s) failed: HRESULT=0x%08x", modeStr.c_str(), (unsigned)hr);
@@ -236,9 +321,10 @@ Napi::Value CreateSender(const Napi::CallbackInfo& info) {
   const int kRowBytes = kWidth * 4;
 
   IDeckLinkMutableVideoFrame* frame = nullptr;
+  // IDeckLinkOutput slot 10
   hr = output->CreateVideoFrame(kWidth, kHeight, kRowBytes, bmdFormat8BitBGRA, bmdFrameFlagDefault, &frame);
   if (hr != S_OK || !frame) {
-    output->DisableVideoOutput();
+    output->DisableVideoOutput();                      // IDeckLinkOutput slot 8
     output->Release();
     device->Release();
     Napi::Error::New(env, "CreateVideoFrame failed").ThrowAsJavaScriptException();
@@ -279,13 +365,14 @@ Napi::Value SendFrame(const Napi::CallbackInfo& info) {
   if (h->destroyed || !h->frame || !h->output) return env.Undefined();
 
   void* dst = nullptr;
+  // IDeckLinkVideoFrame slot 8
   if (h->frame->GetBytes(&dst) != S_OK || !dst) return env.Undefined();
   std::memcpy(dst, buf.Data(), expected);
 
   // Synchronous push — the card pulls frames from its internal buffer at the
   // configured display-mode rate. Faster-than-rate calls effectively drop;
   // slower-than-rate calls cause the last frame to repeat on the SDI output.
-  h->output->DisplayVideoFrameSync(h->frame);
+  h->output->DisplayVideoFrameSync(h->frame);          // IDeckLinkOutput slot 12
   return env.Undefined();
 }
 
@@ -313,11 +400,12 @@ Napi::Value GetVersion(const Napi::CallbackInfo& info) {
   if (!api) return Napi::String::New(env, "unknown");
   CFStringRef ver = nullptr;
   std::string out = "unknown";
+  // IDeckLinkAPIInformation slot 6
   if (api->GetString(BMDDeckLinkAPIVersion, &ver) == S_OK && ver) {
     out = CFStringToStd(ver);
     CFRelease(ver);
   }
-  api->Release();
+  api->Release();                                      // IUnknown_LT slot 2
   return Napi::String::New(env, out);
 }
 
